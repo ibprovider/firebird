@@ -1994,6 +1994,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 						}
 						port->port_srv_auth_block->setPluginName(plugins->name());
 						port->port_srv_auth_block->extractPluginName(&send->p_acpd.p_acpt_plugin);
+						returnData = true;
 						break;
 
 					case IAuth::AUTH_MORE_DATA:
