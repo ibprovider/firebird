@@ -252,8 +252,7 @@ void sha256_ctx::transf(const unsigned char *message,
 
 		for (j = 0; j < 64; j++)
 		{
-			t1 = wv[7] + SHA256_F2(wv[4]) + CH(wv[4], wv[5], wv[6])
-				+ sha256_k[j] + w[j];
+			t1 = wv[7] + SHA256_F2(wv[4]) + CH(wv[4], wv[5], wv[6])	+ sha256_k[j] + w[j];
 			t2 = SHA256_F1(wv[0]) + MAJ(wv[0], wv[1], wv[2]);
 			wv[7] = wv[6];
 			wv[6] = wv[5];
@@ -387,8 +386,7 @@ void sha256_traits::sha_update(sha256_ctx * ctx, const unsigned char *message,
 
 	rem_len = new_len % SHA256_BLOCK_SIZE;
 
-	memcpy(ctx->block, &shifted_message[block_nb << 6],
-		   rem_len);
+	memcpy(ctx->block, &shifted_message[block_nb << 6], rem_len);
 
 	ctx->len = rem_len;
 	ctx->tot_len += (block_nb + 1) << 6;
@@ -404,8 +402,7 @@ void sha256_traits::sha_final(sha256_ctx * ctx, unsigned char *digest)
 	int i;
 #endif
 
-	block_nb = (1 + ((SHA256_BLOCK_SIZE - 9)
-					 < (ctx->len % SHA256_BLOCK_SIZE)));
+	block_nb = (1 + ((SHA256_BLOCK_SIZE - 9) < (ctx->len % SHA256_BLOCK_SIZE)));
 
 	len_b = (ctx->tot_len + ctx->len) << 3;
 	pm_len = block_nb << 6;
@@ -470,8 +467,7 @@ void sha512_ctx::transf(const unsigned char *message,
 
 		for (j = 0; j < 80; j++)
 		{
-			t1 = wv[7] + SHA512_F2(wv[4]) + CH(wv[4], wv[5], wv[6])
-				+ sha512_k[j] + w[j];
+			t1 = wv[7] + SHA512_F2(wv[4]) + CH(wv[4], wv[5], wv[6])	+ sha512_k[j] + w[j];
 			t2 = SHA512_F1(wv[0]) + MAJ(wv[0], wv[1], wv[2]);
 			wv[7] = wv[6];
 			wv[6] = wv[5];
@@ -590,8 +586,7 @@ void sha512_traits::sha_update(sha_ctx *ctx, const unsigned char *message,
 
 	rem_len = new_len % SHA512_BLOCK_SIZE;
 
-	memcpy(ctx->block, &shifted_message[block_nb << 7],
-		   rem_len);
+	memcpy(ctx->block, &shifted_message[block_nb << 7], rem_len);
 
 	ctx->len = rem_len;
 	ctx->tot_len += (block_nb + 1) << 7;
@@ -607,8 +602,7 @@ void sha512_traits::sha_final(sha_ctx *ctx, unsigned char *digest)
 	int i;
 #endif
 
-	block_nb = 1 + ((SHA512_BLOCK_SIZE - 17)
-					 < (ctx->len % SHA512_BLOCK_SIZE));
+	block_nb = 1 + ((SHA512_BLOCK_SIZE - 17) < (ctx->len % SHA512_BLOCK_SIZE));
 
 	len_b = (ctx->tot_len + ctx->len) << 3;
 	pm_len = block_nb << 7;
@@ -702,8 +696,7 @@ void sha384_traits::sha_final(sha_ctx *ctx, unsigned char *digest)
 	int i;
 #endif
 
-	block_nb = (1 + ((SHA384_BLOCK_SIZE - 17)
-					 < (ctx->len % SHA384_BLOCK_SIZE)));
+	block_nb = (1 + ((SHA384_BLOCK_SIZE - 17) < (ctx->len % SHA384_BLOCK_SIZE)));
 
 	len_b = (ctx->tot_len + ctx->len) << 3;
 	pm_len = block_nb << 7;
@@ -795,8 +788,7 @@ void sha224_traits::sha_final(sha_ctx *ctx, unsigned char *digest)
 	int i;
 #endif
 
-	block_nb = (1 + ((SHA224_BLOCK_SIZE - 9)
-					 < (ctx->len % SHA224_BLOCK_SIZE)));
+	block_nb = (1 + ((SHA224_BLOCK_SIZE - 9) < (ctx->len % SHA224_BLOCK_SIZE)));
 
 	len_b = (ctx->tot_len + ctx->len) << 3;
 	pm_len = block_nb << 6;
@@ -832,20 +824,21 @@ void sha224_traits::sha_final(sha_ctx *ctx, unsigned char *digest)
 #include <stdio.h>
 #include <stdlib.h>
 
-void test(const char *vector, unsigned char *digest,
-		  unsigned int digest_size)
+void test(const char *vector, unsigned char *digest, unsigned int digest_size)
 {
 	char output[2 * SHA_MAX_DIGEST_SIZE + 1];
 	int i;
 
 	output[2 * digest_size] = '\0';
 
-	for (i = 0; i < (int) digest_size ; i++) {
+	for (i = 0; i < (int) digest_size ; i++)
+	{
 	   sprintf(output + 2 * i, "%02x", digest[i]);
 	}
 
 	printf("H: %s\n", output);
-	if (strcmp(vector, output)) {
+	if (strcmp(vector, output))
+	{
 		fprintf(stderr, "Test failed.\n");
 		exit(EXIT_FAILURE);
 	}
@@ -899,10 +892,13 @@ int main(void)
 	unsigned char digest[SHA512_DIGEST_SIZE];
 
 	message3 = (unsigned char *) malloc(message3_len);
-	if (message3 == NULL) {
+
+	if (message3 == NULL)
+	{
 		fprintf(stderr, "Can't allocate memory\n");
 		return -1;
 	}
+
 	memset(message3, 'a', message3_len);
 	printf("SHA-2 FIPS 180-2 Validation tests\n\n");
 	printf("SHA-224 Test vectors\n");
@@ -951,4 +947,3 @@ int main(void)
 }
 
 #endif /* TEST_VECTORS */
-
