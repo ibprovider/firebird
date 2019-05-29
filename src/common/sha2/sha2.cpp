@@ -452,9 +452,13 @@ sha512::sha512() : sha2_base()
 	sha512_init(&ctx);
 }
 
-void sha512::sha512_transf(sha512_ctx *ctx, const unsigned char *message,
+void sha512_ctx::transf(const unsigned char *message,
                    unsigned int block_nb)
 {
+    typedef sha2_base::uint64 uint64;
+
+    sha512_ctx* const ctx=this;
+
     uint64 w[80];
     uint64 wv[8];
     uint64 t1, t2;
@@ -587,8 +591,8 @@ void sha512::sha512_update(sha512_ctx *ctx, const unsigned char *message,
 
     shifted_message = message + rem_len;
 
-    sha512_transf(ctx, ctx->block, 1);
-    sha512_transf(ctx, shifted_message, block_nb);
+    ctx->transf(ctx->block, 1);
+    ctx->transf(shifted_message, block_nb);
 
     rem_len = new_len % SHA512_BLOCK_SIZE;
 
@@ -619,7 +623,7 @@ void sha512::sha512_final(sha512_ctx *ctx, unsigned char *digest)
     ctx->block[ctx->len] = 0x80;
     UNPACK32(len_b, ctx->block + pm_len - 4);
 
-    sha512_transf(ctx, ctx->block, block_nb);
+    ctx->transf(ctx->block, block_nb);
 
 #ifndef UNROLL_LOOPS
     for (i = 0 ; i < 8; i++) {
@@ -684,8 +688,8 @@ void sha384::sha384_update(sha384_ctx *ctx,const unsigned char *message,
 
     shifted_message = message + rem_len;
 
-    sha512_transf(ctx, ctx->block, 1);
-    sha512_transf(ctx, shifted_message, block_nb);
+    ctx->transf(ctx->block, 1);
+    ctx->transf(shifted_message, block_nb);
 
     rem_len = new_len % SHA384_BLOCK_SIZE;
 
@@ -716,7 +720,7 @@ void sha384::sha384_final(sha384_ctx *ctx, unsigned char *digest)
     ctx->block[ctx->len] = 0x80;
     UNPACK32(len_b, ctx->block + pm_len - 4);
 
-    sha512_transf(ctx, ctx->block, block_nb);
+    ctx->transf(ctx->block, block_nb);
 
 #ifndef UNROLL_LOOPS
     for (i = 0 ; i < 6; i++) {

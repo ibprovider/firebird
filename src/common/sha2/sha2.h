@@ -217,19 +217,22 @@ private:
 	void sha_final(unsigned char *digest) {sha224_final(&ctx,digest);};
 };
 
+struct sha512_ctx{
+	unsigned int tot_len;
+	unsigned int len;
+	unsigned char block[2 * SHA512_BLOCK_SIZE];
+	sha2_base::uint64 h[8];
+
+	void transf(const unsigned char *message,
+                   unsigned int block_nb);
+
+};
+	
 class sha512 : public sha2_base {
 public:
 	sha512();
 	const unsigned int get_DigestSize() {return SHA512_DIGEST_SIZE;};
 	const unsigned int get_BlockSize() {return SHA512_BLOCK_SIZE;}; 
-	
-protected:
-	typedef struct {
-		unsigned int tot_len;
-		unsigned int len;
-		unsigned char block[2 * SHA512_BLOCK_SIZE];
-		uint64 h[8];
-	} sha512_ctx;
 	
 private:
 	void sha512_init(sha512_ctx *ctx);
@@ -239,9 +242,6 @@ private:
 
 protected:
 	sha512_ctx ctx;
-
-	void sha512_transf(sha512_ctx *ctx, const unsigned char *message,
-                   unsigned int block_nb);
 
 private:
 	void sha_init() {sha512_init(&ctx);};
