@@ -280,4 +280,3 @@ public:
 } //Firebird
 
 #endif /* !_SHA2_H */
-
