@@ -161,7 +161,6 @@ public:
 	
 	void getHash(UCharBuffer& h);
 #endif
-	
 };
 
 class sha256 : public sha2_base { 
@@ -204,6 +203,7 @@ public:
 	
 private:
 	typedef sha256_ctx sha224_ctx;
+
 	void sha224_init(sha224_ctx *ctx);
 	void sha224_update(sha224_ctx *ctx, const unsigned char *message,
                    unsigned int len);
@@ -234,8 +234,8 @@ private:
 	void sha512_update(sha512_ctx *ctx, const unsigned char *message,
                    unsigned int len);
 	void sha512_final(sha512_ctx *ctx, unsigned char *digest);
+
 protected:
-	
 	sha512_ctx ctx;
 
 	void sha512_transf(sha512_ctx *ctx, const unsigned char *message,
@@ -245,7 +245,6 @@ private:
 	void sha_init() {sha512_init(&ctx);};
 	void sha_update(const unsigned char *message, unsigned int len) {sha512_update(&ctx, message, len);};
 	void sha_final(unsigned char *digest) {sha512_final(&ctx, digest);};
-
 };
 
 class sha384 : public sha512 {
@@ -256,6 +255,7 @@ public:
 	
 private:
 	typedef sha512_ctx sha384_ctx;
+
 	void sha384_init(sha384_ctx *ctx);
 	void sha384_update(sha384_ctx *ctx, const unsigned char *message,
                    unsigned int len);
@@ -265,7 +265,6 @@ private:
 	void sha_init() {sha384_init(&ctx);};
 	void sha_update(const unsigned char *message, unsigned int len) {sha384_update(&ctx,message,len);};
 	void sha_final(unsigned char *digest) {sha384_final(&ctx, digest);};
-
 };
 
 } //Firebird
