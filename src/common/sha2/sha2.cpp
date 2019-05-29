@@ -734,7 +734,7 @@ void sha384::sha384_final(sha384_ctx *ctx, unsigned char *digest)
 
 /* SHA-224 functions */
 
-sha224::sha224() : sha256()
+sha224::sha224() : sha2_base()
 {
 	sha224_init(&ctx);
 }
