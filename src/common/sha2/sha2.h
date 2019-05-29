@@ -180,10 +180,12 @@ public:
 	const unsigned int get_BlockSize() {return SHA256_BLOCK_SIZE;}; 
 	
 private:
-	void sha256_init(sha256_ctx * ctx);
-	void sha256_update(sha256_ctx *ctx, const unsigned char *message,
+	typedef sha256_ctx sha_ctx;
+
+	void sha256_init(sha_ctx * ctx);
+	void sha256_update(sha_ctx *ctx, const unsigned char *message,
                    unsigned int len);
-	void sha256_final(sha256_ctx *ctx, unsigned char *digest);
+	void sha256_final(sha_ctx *ctx, unsigned char *digest);
 	
 private:
 	void sha_init() {sha256_init(&ctx);};
@@ -191,7 +193,7 @@ private:
 	void sha_final(unsigned char *digest) {sha256_final(&ctx,digest);};
 	
 private:
-	sha256_ctx ctx;
+	sha_ctx ctx;
 };
 
 class sha224 : public sha2_base {
@@ -201,12 +203,12 @@ public:
 	const unsigned int get_BlockSize() {return SHA224_BLOCK_SIZE;}; 
 	
 private:
-	typedef sha256_ctx sha224_ctx;
+	typedef sha256_ctx sha_ctx;
 
-	void sha224_init(sha224_ctx *ctx);
-	void sha224_update(sha224_ctx *ctx, const unsigned char *message,
+	void sha224_init(sha_ctx *ctx);
+	void sha224_update(sha_ctx *ctx, const unsigned char *message,
                    unsigned int len);
-	void sha224_final(sha224_ctx *ctx, unsigned char *digest);
+	void sha224_final(sha_ctx *ctx, unsigned char *digest);
 	
 private:
 	void sha_init() {sha224_init(&ctx);};
@@ -214,7 +216,7 @@ private:
 	void sha_final(unsigned char *digest) {sha224_final(&ctx,digest);};
 
 private:
-	sha224_ctx ctx;
+	sha_ctx ctx;
 };
 
 struct sha512_ctx{
@@ -235,10 +237,12 @@ public:
 	const unsigned int get_BlockSize() {return SHA512_BLOCK_SIZE;}; 
 	
 private:
-	void sha512_init(sha512_ctx *ctx);
-	void sha512_update(sha512_ctx *ctx, const unsigned char *message,
+	typedef sha512_ctx sha_ctx;
+
+	void sha512_init(sha_ctx *ctx);
+	void sha512_update(sha_ctx *ctx, const unsigned char *message,
                    unsigned int len);
-	void sha512_final(sha512_ctx *ctx, unsigned char *digest);
+	void sha512_final(sha_ctx *ctx, unsigned char *digest);
 
 private:
 	void sha_init() {sha512_init(&ctx);};
@@ -246,7 +250,7 @@ private:
 	void sha_final(unsigned char *digest) {sha512_final(&ctx, digest);};
 
 private:
-	sha512_ctx ctx;
+	sha_ctx ctx;
 };
 
 class sha384 : public sha2_base {
@@ -256,12 +260,12 @@ public:
 	const unsigned int get_BlockSize() {return SHA384_BLOCK_SIZE;}; 
 	
 private:
-	typedef sha512_ctx sha384_ctx;
+	typedef sha512_ctx sha_ctx;
 
-	void sha384_init(sha384_ctx *ctx);
-	void sha384_update(sha384_ctx *ctx, const unsigned char *message,
+	void sha384_init(sha_ctx *ctx);
+	void sha384_update(sha_ctx *ctx, const unsigned char *message,
                    unsigned int len);
-	void sha384_final(sha384_ctx *ctx, unsigned char *digest);
+	void sha384_final(sha_ctx *ctx, unsigned char *digest);
 
 private:
 	void sha_init() {sha384_init(&ctx);};
@@ -269,7 +273,7 @@ private:
 	void sha_final(unsigned char *digest) {sha384_final(&ctx, digest);};
 
 private:
-	sha384_ctx ctx;
+	sha_ctx ctx;
 };
 
 } //Firebird

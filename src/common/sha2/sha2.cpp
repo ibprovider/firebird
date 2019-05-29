@@ -553,7 +553,7 @@ sha512::sha512() : sha2_base()
 	sha512_init(&ctx);
 }
 
-void sha512::sha512_init(sha512_ctx *ctx)
+void sha512::sha512_init(sha_ctx *ctx)
 {
 #ifndef UNROLL_LOOPS
     int i;
@@ -571,7 +571,7 @@ void sha512::sha512_init(sha512_ctx *ctx)
     ctx->tot_len = 0;
 }
 
-void sha512::sha512_update(sha512_ctx *ctx, const unsigned char *message,
+void sha512::sha512_update(sha_ctx *ctx, const unsigned char *message,
                    unsigned int len)
 {
     unsigned int block_nb;
@@ -605,7 +605,7 @@ void sha512::sha512_update(sha512_ctx *ctx, const unsigned char *message,
     ctx->tot_len += (block_nb + 1) << 7;
 }
 
-void sha512::sha512_final(sha512_ctx *ctx, unsigned char *digest)
+void sha512::sha512_final(sha_ctx *ctx, unsigned char *digest)
 {
     unsigned int block_nb;
     unsigned int pm_len;
@@ -650,7 +650,7 @@ sha384::sha384() : sha2_base()
 	sha384_init(&ctx);
 }
 
-void sha384::sha384_init(sha384_ctx *ctx)
+void sha384::sha384_init(sha_ctx *ctx)
 {
 #ifndef UNROLL_LOOPS
     int i;
@@ -668,7 +668,7 @@ void sha384::sha384_init(sha384_ctx *ctx)
     ctx->tot_len = 0;
 }
 
-void sha384::sha384_update(sha384_ctx *ctx,const unsigned char *message,
+void sha384::sha384_update(sha_ctx *ctx,const unsigned char *message,
                    unsigned int len)
 {
     unsigned int block_nb;
@@ -702,7 +702,7 @@ void sha384::sha384_update(sha384_ctx *ctx,const unsigned char *message,
     ctx->tot_len += (block_nb + 1) << 7;
 }
 
-void sha384::sha384_final(sha384_ctx *ctx, unsigned char *digest)
+void sha384::sha384_final(sha_ctx *ctx, unsigned char *digest)
 {
     unsigned int block_nb;
     unsigned int pm_len;
@@ -745,7 +745,7 @@ sha224::sha224() : sha2_base()
 	sha224_init(&ctx);
 }
 
-void sha224::sha224_init(sha224_ctx *ctx)
+void sha224::sha224_init(sha_ctx *ctx)
 {
 #ifndef UNROLL_LOOPS
     int i;
@@ -763,7 +763,7 @@ void sha224::sha224_init(sha224_ctx *ctx)
     ctx->tot_len = 0;
 }
 
-void sha224::sha224_update(sha224_ctx *ctx, const unsigned char *message,
+void sha224::sha224_update(sha_ctx *ctx, const unsigned char *message,
                    unsigned int len)
 {
     unsigned int block_nb;
@@ -797,7 +797,7 @@ void sha224::sha224_update(sha224_ctx *ctx, const unsigned char *message,
     ctx->tot_len += (block_nb + 1) << 6;
 }
 
-void sha224::sha224_final(sha224_ctx *ctx, unsigned char *digest)
+void sha224::sha224_final(sha_ctx *ctx, unsigned char *digest)
 {
     unsigned int block_nb;
     unsigned int pm_len;
