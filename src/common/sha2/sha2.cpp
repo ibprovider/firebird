@@ -131,27 +131,27 @@
 namespace Firebird {
 
 
-sha2_base::uint32 sha224_h0[8] =
+sha2_types::uint32 sha224_h0[8] =
             {0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939,
              0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4};
 
-sha2_base::uint32 sha256_h0[8] =
+sha2_types::uint32 sha256_h0[8] =
             {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
              0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
 
-sha2_base::uint64 sha384_h0[8] =
+sha2_types::uint64 sha384_h0[8] =
             {0xcbbb9d5dc1059ed8ULL, 0x629a292a367cd507ULL,
              0x9159015a3070dd17ULL, 0x152fecd8f70e5939ULL,
              0x67332667ffc00b31ULL, 0x8eb44a8768581511ULL,
              0xdb0c2e0d64f98fa7ULL, 0x47b5481dbefa4fa4ULL};
 
-sha2_base::uint64 sha512_h0[8] =
+sha2_types::uint64 sha512_h0[8] =
             {0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
              0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL,
              0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL,
              0x1f83d9abfb41bd6bULL, 0x5be0cd19137e2179ULL};
 
-sha2_base::uint32 sha256_k[64] =
+sha2_types::uint32 sha256_k[64] =
             {0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
              0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
              0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
@@ -169,7 +169,7 @@ sha2_base::uint32 sha256_k[64] =
              0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
              0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
-sha2_base::uint64 sha512_k[80] =
+sha2_types::uint64 sha512_k[80] =
             {0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL,
              0xb5c0fbcfec4d3b2fULL, 0xe9b5dba58189dbbcULL,
              0x3956c25bf348b538ULL, 0x59f111f1b605d019ULL,
@@ -211,28 +211,12 @@ sha2_base::uint64 sha512_k[80] =
              0x4cc5d4becb3e42b6ULL, 0x597f299cfc657e2aULL,
              0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL};
              
-/* sha2_base */
-
-void sha2_base::getHash(unsigned char *digest) 
-{
-	sha_final(digest);
-	reset();
-};   
-
-#ifndef NIST_COMPLIANCY_TESTS
-void sha2_base::getHash(UCharBuffer& h) 
-{
-	sha_final(h.getBuffer(get_DigestSize()));
-	reset();
-};
-#endif          
-             
 /* SHA-256 context structure */
 
 void sha256_ctx::transf(const unsigned char *message,
                    unsigned int block_nb)
 {
-    typedef sha2_base::uint32 uint32;
+    typedef sha2_types::uint32 uint32;
 
     sha256_ctx* const ctx=this;
 
@@ -350,12 +334,7 @@ void sha256_ctx::transf(const unsigned char *message,
 
 /* SHA-256 functions */
 
-sha256::sha256() : sha2_base() 
-{
-	sha256_init(&ctx);
-}
-
-void sha256::sha256_init(sha256_ctx * ctx)
+void sha256_traits::sha_init(sha256_ctx * ctx)
 {
 #ifndef UNROLL_LOOPS
     int i;
@@ -373,7 +352,7 @@ void sha256::sha256_init(sha256_ctx * ctx)
     ctx->tot_len = 0;
 }
 
-void sha256::sha256_update(sha256_ctx * ctx, const unsigned char *message,
+void sha256_traits::sha_update(sha256_ctx * ctx, const unsigned char *message,
                    unsigned int len)
 {
     unsigned int block_nb;
@@ -407,7 +386,7 @@ void sha256::sha256_update(sha256_ctx * ctx, const unsigned char *message,
     ctx->tot_len += (block_nb + 1) << 6;
 }
 
-void sha256::sha256_final(sha256_ctx * ctx, unsigned char *digest)
+void sha256_traits::sha_final(sha256_ctx * ctx, unsigned char *digest)
 {
     unsigned int block_nb;
     unsigned int pm_len;
@@ -450,7 +429,7 @@ void sha256::sha256_final(sha256_ctx * ctx, unsigned char *digest)
 void sha512_ctx::transf(const unsigned char *message,
                    unsigned int block_nb)
 {
-    typedef sha2_base::uint64 uint64;
+    typedef sha2_types::uint64 uint64;
 
     sha512_ctx* const ctx=this;
 
@@ -548,12 +527,7 @@ void sha512_ctx::transf(const unsigned char *message,
 
 /* SHA-512 functions */
 
-sha512::sha512() : sha2_base()
-{
-	sha512_init(&ctx);
-}
-
-void sha512::sha512_init(sha_ctx *ctx)
+void sha512_traits::sha_init(sha_ctx *ctx)
 {
 #ifndef UNROLL_LOOPS
     int i;
@@ -571,7 +545,7 @@ void sha512::sha512_init(sha_ctx *ctx)
     ctx->tot_len = 0;
 }
 
-void sha512::sha512_update(sha_ctx *ctx, const unsigned char *message,
+void sha512_traits::sha_update(sha_ctx *ctx, const unsigned char *message,
                    unsigned int len)
 {
     unsigned int block_nb;
@@ -605,7 +579,7 @@ void sha512::sha512_update(sha_ctx *ctx, const unsigned char *message,
     ctx->tot_len += (block_nb + 1) << 7;
 }
 
-void sha512::sha512_final(sha_ctx *ctx, unsigned char *digest)
+void sha512_traits::sha_final(sha_ctx *ctx, unsigned char *digest)
 {
     unsigned int block_nb;
     unsigned int pm_len;
@@ -645,12 +619,7 @@ void sha512::sha512_final(sha_ctx *ctx, unsigned char *digest)
 
 /* SHA-384 functions */
 
-sha384::sha384() : sha2_base()
-{
-	sha384_init(&ctx);
-}
-
-void sha384::sha384_init(sha_ctx *ctx)
+void sha384_traits::sha_init(sha_ctx *ctx)
 {
 #ifndef UNROLL_LOOPS
     int i;
@@ -668,7 +637,7 @@ void sha384::sha384_init(sha_ctx *ctx)
     ctx->tot_len = 0;
 }
 
-void sha384::sha384_update(sha_ctx *ctx,const unsigned char *message,
+void sha384_traits::sha_update(sha_ctx *ctx,const unsigned char *message,
                    unsigned int len)
 {
     unsigned int block_nb;
@@ -702,7 +671,7 @@ void sha384::sha384_update(sha_ctx *ctx,const unsigned char *message,
     ctx->tot_len += (block_nb + 1) << 7;
 }
 
-void sha384::sha384_final(sha_ctx *ctx, unsigned char *digest)
+void sha384_traits::sha_final(sha_ctx *ctx, unsigned char *digest)
 {
     unsigned int block_nb;
     unsigned int pm_len;
@@ -740,12 +709,7 @@ void sha384::sha384_final(sha_ctx *ctx, unsigned char *digest)
 
 /* SHA-224 functions */
 
-sha224::sha224() : sha2_base()
-{
-	sha224_init(&ctx);
-}
-
-void sha224::sha224_init(sha_ctx *ctx)
+void sha224_traits::sha_init(sha_ctx *ctx)
 {
 #ifndef UNROLL_LOOPS
     int i;
@@ -763,7 +727,7 @@ void sha224::sha224_init(sha_ctx *ctx)
     ctx->tot_len = 0;
 }
 
-void sha224::sha224_update(sha_ctx *ctx, const unsigned char *message,
+void sha224_traits::sha_update(sha_ctx *ctx, const unsigned char *message,
                    unsigned int len)
 {
     unsigned int block_nb;
@@ -797,7 +761,7 @@ void sha224::sha224_update(sha_ctx *ctx, const unsigned char *message,
     ctx->tot_len += (block_nb + 1) << 6;
 }
 
-void sha224::sha224_final(sha_ctx *ctx, unsigned char *digest)
+void sha224_traits::sha_final(sha_ctx *ctx, unsigned char *digest)
 {
     unsigned int block_nb;
     unsigned int pm_len;
