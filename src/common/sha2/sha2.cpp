@@ -227,13 +227,7 @@ void sha2_base::getHash(UCharBuffer& h)
 };
 #endif          
              
-
-/* SHA-256 functions */
-
-sha256::sha256() : sha2_base() 
-{
-	sha256_init(&ctx);
-}
+/* SHA-256 context structure */
 
 void sha256_ctx::transf(const unsigned char *message,
                    unsigned int block_nb)
@@ -352,6 +346,13 @@ void sha256_ctx::transf(const unsigned char *message,
         ctx->h[6] += wv[6]; ctx->h[7] += wv[7];
 #endif /* !UNROLL_LOOPS */
     }
+}
+
+/* SHA-256 functions */
+
+sha256::sha256() : sha2_base() 
+{
+	sha256_init(&ctx);
 }
 
 void sha256::sha256_init(sha256_ctx * ctx)
