@@ -230,23 +230,28 @@ void sha256_ctx::transf(const unsigned char *message,
     int j;
 #endif
 
-    for (i = 0; i < (int) block_nb; i++) {
+    for (i = 0; i < (int) block_nb; i++)
+    {
         sub_block = message + (i << 6);
 
 #ifndef UNROLL_LOOPS
-        for (j = 0; j < 16; j++) {
+        for (j = 0; j < 16; j++)
+        {
             PACK32(&sub_block[j << 2], &w[j]);
         }
 
-        for (j = 16; j < 64; j++) {
+        for (j = 16; j < 64; j++)
+        {
             SHA256_SCR(j);
         }
 
-        for (j = 0; j < 8; j++) {
+        for (j = 0; j < 8; j++)
+        {
             wv[j] = ctx->h[j];
         }
 
-        for (j = 0; j < 64; j++) {
+        for (j = 0; j < 64; j++)
+        {
             t1 = wv[7] + SHA256_F2(wv[4]) + CH(wv[4], wv[5], wv[6])
                 + sha256_k[j] + w[j];
             t2 = SHA256_F1(wv[0]) + MAJ(wv[0], wv[1], wv[2]);
@@ -260,7 +265,8 @@ void sha256_ctx::transf(const unsigned char *message,
             wv[0] = t1 + t2;
         }
 
-        for (j = 0; j < 8; j++) {
+        for (j = 0; j < 8; j++)
+        {
             ctx->h[j] += wv[j];
         }
 #else
@@ -338,7 +344,8 @@ void sha256_traits::sha_init(sha256_ctx * ctx)
 {
 #ifndef UNROLL_LOOPS
     int i;
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++)
+    {
         ctx->h[i] = sha256_h0[i];
     }
 #else
@@ -364,7 +371,8 @@ void sha256_traits::sha_update(sha256_ctx * ctx, const unsigned char *message,
 
     memcpy(&ctx->block[ctx->len], message, rem_len);
 
-    if (ctx->len + len < SHA256_BLOCK_SIZE) {
+    if (ctx->len + len < SHA256_BLOCK_SIZE)
+    {
         ctx->len += len;
         return;
     }
@@ -409,7 +417,8 @@ void sha256_traits::sha_final(sha256_ctx * ctx, unsigned char *digest)
     ctx->transf(ctx->block, block_nb);
 
 #ifndef UNROLL_LOOPS
-    for (i = 0 ; i < 8; i++) {
+    for (i = 0 ; i < 8; i++)
+    {
         UNPACK32(ctx->h[i], &digest[i << 2]);
     }
 #else
@@ -439,23 +448,28 @@ void sha512_ctx::transf(const unsigned char *message,
     const unsigned char *sub_block;
     int i, j;
 
-    for (i = 0; i < (int) block_nb; i++) {
+    for (i = 0; i < (int) block_nb; i++)
+    {
         sub_block = message + (i << 7);
 
 #ifndef UNROLL_LOOPS
-        for (j = 0; j < 16; j++) {
+        for (j = 0; j < 16; j++)
+        {
             PACK64(&sub_block[j << 3], &w[j]);
         }
 
-        for (j = 16; j < 80; j++) {
+        for (j = 16; j < 80; j++)
+        {
             SHA512_SCR(j);
         }
 
-        for (j = 0; j < 8; j++) {
+        for (j = 0; j < 8; j++)
+        {
             wv[j] = ctx->h[j];
         }
 
-        for (j = 0; j < 80; j++) {
+        for (j = 0; j < 80; j++)
+        {
             t1 = wv[7] + SHA512_F2(wv[4]) + CH(wv[4], wv[5], wv[6])
                 + sha512_k[j] + w[j];
             t2 = SHA512_F1(wv[0]) + MAJ(wv[0], wv[1], wv[2]);
@@ -469,7 +483,8 @@ void sha512_ctx::transf(const unsigned char *message,
             wv[0] = t1 + t2;
         }
 
-        for (j = 0; j < 8; j++) {
+        for (j = 0; j < 8; j++)
+        {
             ctx->h[j] += wv[j];
         }
 #else
@@ -506,7 +521,8 @@ void sha512_ctx::transf(const unsigned char *message,
 
         j = 0;
 
-        do {
+        do
+        {
             SHA512_EXP(0,1,2,3,4,5,6,7,j); j++;
             SHA512_EXP(7,0,1,2,3,4,5,6,j); j++;
             SHA512_EXP(6,7,0,1,2,3,4,5,j); j++;
@@ -531,7 +547,8 @@ void sha512_traits::sha_init(sha_ctx *ctx)
 {
 #ifndef UNROLL_LOOPS
     int i;
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++)
+    {
         ctx->h[i] = sha512_h0[i];
     }
 #else
@@ -557,7 +574,8 @@ void sha512_traits::sha_update(sha_ctx *ctx, const unsigned char *message,
 
     memcpy(&ctx->block[ctx->len], message, rem_len);
 
-    if (ctx->len + len < SHA512_BLOCK_SIZE) {
+    if (ctx->len + len < SHA512_BLOCK_SIZE)
+    {
         ctx->len += len;
         return;
     }
@@ -602,7 +620,8 @@ void sha512_traits::sha_final(sha_ctx *ctx, unsigned char *digest)
     ctx->transf(ctx->block, block_nb);
 
 #ifndef UNROLL_LOOPS
-    for (i = 0 ; i < 8; i++) {
+    for (i = 0 ; i < 8; i++)
+    {
         UNPACK64(ctx->h[i], &digest[i << 3]);
     }
 #else
@@ -623,7 +642,8 @@ void sha384_traits::sha_init(sha_ctx *ctx)
 {
 #ifndef UNROLL_LOOPS
     int i;
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++)
+    {
         ctx->h[i] = sha384_h0[i];
     }
 #else
@@ -649,7 +669,8 @@ void sha384_traits::sha_update(sha_ctx *ctx,const unsigned char *message,
 
     memcpy(&ctx->block[ctx->len], message, rem_len);
 
-    if (ctx->len + len < SHA384_BLOCK_SIZE) {
+    if (ctx->len + len < SHA384_BLOCK_SIZE)
+    {
         ctx->len += len;
         return;
     }
@@ -694,7 +715,8 @@ void sha384_traits::sha_final(sha_ctx *ctx, unsigned char *digest)
     ctx->transf(ctx->block, block_nb);
 
 #ifndef UNROLL_LOOPS
-    for (i = 0 ; i < 6; i++) {
+    for (i = 0 ; i < 6; i++)
+    {
         UNPACK64(ctx->h[i], &digest[i << 3]);
     }
 #else
@@ -713,7 +735,8 @@ void sha224_traits::sha_init(sha_ctx *ctx)
 {
 #ifndef UNROLL_LOOPS
     int i;
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++)
+    {
         ctx->h[i] = sha224_h0[i];
     }
 #else
@@ -739,7 +762,8 @@ void sha224_traits::sha_update(sha_ctx *ctx, const unsigned char *message,
 
     memcpy(&ctx->block[ctx->len], message, rem_len);
 
-    if (ctx->len + len < SHA224_BLOCK_SIZE) {
+    if (ctx->len + len < SHA224_BLOCK_SIZE)
+    {
         ctx->len += len;
         return;
     }
@@ -784,7 +808,8 @@ void sha224_traits::sha_final(sha_ctx *ctx, unsigned char *digest)
     ctx->transf(ctx->block, block_nb);
 
 #ifndef UNROLL_LOOPS
-    for (i = 0 ; i < 7; i++) {
+    for (i = 0 ; i < 7; i++)
+    {
         UNPACK32(ctx->h[i], &digest[i << 2]);
     }
 #else
