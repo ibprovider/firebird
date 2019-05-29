@@ -240,7 +240,7 @@ private:
                    unsigned int len);
 	void sha512_final(sha512_ctx *ctx, unsigned char *digest);
 
-protected:
+private:
 	sha512_ctx ctx;
 
 private:
@@ -249,7 +249,7 @@ private:
 	void sha_final(unsigned char *digest) {sha512_final(&ctx, digest);};
 };
 
-class sha384 : public sha512 {
+class sha384 : public sha2_base {
 public:
 	sha384();
 	const unsigned int get_DigestSize() {return SHA384_DIGEST_SIZE;};
@@ -262,6 +262,9 @@ private:
 	void sha384_update(sha384_ctx *ctx, const unsigned char *message,
                    unsigned int len);
 	void sha384_final(sha384_ctx *ctx, unsigned char *digest);
+
+private:
+	sha384_ctx ctx;
 
 private:
 	void sha_init() {sha384_init(&ctx);};

@@ -643,7 +643,7 @@ void sha512::sha512_final(sha512_ctx *ctx, unsigned char *digest)
 
 /* SHA-384 functions */
 
-sha384::sha384() : sha512()
+sha384::sha384() : sha2_base()
 {
 	sha384_init(&ctx);
 }
