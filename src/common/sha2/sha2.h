@@ -78,8 +78,8 @@ namespace Firebird {
 
 template<class SHA>void get_digest(const unsigned char *message, size_t len, unsigned char *digest)
 {
-    SHA sha;
-    sha.process(len, message);
+	SHA sha;
+	sha.process(len, message);
 	sha.getHash(digest);
 }
 
@@ -161,10 +161,10 @@ public:
 	}
 
 	void getHash(unsigned char *digest)
-    {
+	{
 		SHA_TRAITS::sha_final(&ctx, digest);
 		SHA_TRAITS::sha_init(&ctx);
-    }
+	}
 
 #ifndef NIST_COMPLIANCY_TESTS
 	void process(const UCharBuffer& bytes)
@@ -176,7 +176,7 @@ public:
 	{
 		SHA_TRAITS::sha_final(&ctx, h.getBuffer(SHA_TRAITS::get_DigestSize()));
 		SHA_TRAITS::sha_init(&ctx);
-    }
+	}
 #endif
 
 private:
@@ -195,7 +195,7 @@ struct sha256_ctx {
 	sha2_types::uint32 h[8];
 
 	void transf(const unsigned char *message,
-                   unsigned int block_nb);
+				   unsigned int block_nb);
 };
 
 class sha256_traits: private sha2_types {
@@ -210,7 +210,7 @@ public:
 	static void sha_init(sha_ctx * ctx);
 
 	static void sha_update(sha_ctx *ctx, const unsigned char *message,
-                   unsigned int len);
+				   unsigned int len);
 
 	static void sha_final(sha_ctx *ctx, unsigned char *digest);
 };
@@ -227,7 +227,7 @@ public:
 	static void sha_init(sha_ctx * ctx);
 
 	static void sha_update(sha_ctx *ctx, const unsigned char *message,
-                   unsigned int len);
+				   unsigned int len);
 
 	static void sha_final(sha_ctx *ctx, unsigned char *digest);
 };
@@ -239,7 +239,7 @@ struct sha512_ctx{
 	sha2_types::uint64 h[8];
 
 	void transf(const unsigned char *message,
-                   unsigned int block_nb);
+				   unsigned int block_nb);
 
 };
 
@@ -255,7 +255,7 @@ public:
 	static void sha_init(sha_ctx * ctx);
 
 	static void sha_update(sha_ctx *ctx, const unsigned char *message,
-                   unsigned int len);
+				   unsigned int len);
 
 	static void sha_final(sha_ctx *ctx, unsigned char *digest);
 };
@@ -272,7 +272,7 @@ public:
 	static void sha_init(sha_ctx * ctx);
 
 	static void sha_update(sha_ctx *ctx, const unsigned char *message,
-                   unsigned int len);
+				   unsigned int len);
 
 	static void sha_final(sha_ctx *ctx, unsigned char *digest);
 };
