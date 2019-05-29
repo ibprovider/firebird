@@ -128,7 +128,7 @@ public:
 	typedef unsigned int  uint32;
 	typedef unsigned long long uint64;
 	
-protected:
+private:
 	virtual void sha_init()=0;
 	virtual void sha_update(const unsigned char *message, unsigned int len)=0;
 	virtual void sha_final(unsigned char *digest)=0;
@@ -189,6 +189,8 @@ protected:
 	
 	void sha256_transf(sha256_ctx * ctx, const unsigned char *message,
                    unsigned int block_nb);	
+
+private:
 	void sha_init() {sha256_init(&ctx);};
 	void sha_update(const unsigned char *message, unsigned int len) {sha256_update(&ctx,message,len);};
 	void sha_final(unsigned char *digest) {sha256_final(&ctx,digest);};
@@ -207,7 +209,7 @@ private:
                    unsigned int len);
 	void sha224_final(sha224_ctx *ctx, unsigned char *digest);
 
-protected:
+private:
 	void sha_init() {sha224_init(&ctx);};
 	void sha_update(const unsigned char *message, unsigned int len) {sha224_update(&ctx, message, len);};
 	void sha_final(unsigned char *digest) {sha224_final(&ctx,digest);};
@@ -238,6 +240,8 @@ protected:
 
 	void sha512_transf(sha512_ctx *ctx, const unsigned char *message,
                    unsigned int block_nb);
+
+private:
 	void sha_init() {sha512_init(&ctx);};
 	void sha_update(const unsigned char *message, unsigned int len) {sha512_update(&ctx, message, len);};
 	void sha_final(unsigned char *digest) {sha512_final(&ctx, digest);};
@@ -257,7 +261,7 @@ private:
                    unsigned int len);
 	void sha384_final(sha384_ctx *ctx, unsigned char *digest);
 
-protected:
+private:
 	void sha_init() {sha384_init(&ctx);};
 	void sha_update(const unsigned char *message, unsigned int len) {sha384_update(&ctx,message,len);};
 	void sha_final(unsigned char *digest) {sha384_final(&ctx, digest);};
