@@ -186,12 +186,12 @@ private:
 	void sha256_final(sha256_ctx *ctx, unsigned char *digest);
 	
 private:
-	sha256_ctx ctx;
-	
-private:
 	void sha_init() {sha256_init(&ctx);};
 	void sha_update(const unsigned char *message, unsigned int len) {sha256_update(&ctx,message,len);};
 	void sha_final(unsigned char *digest) {sha256_final(&ctx,digest);};
+	
+private:
+	sha256_ctx ctx;
 };
 
 class sha224 : public sha2_base {
@@ -207,14 +207,14 @@ private:
 	void sha224_update(sha224_ctx *ctx, const unsigned char *message,
                    unsigned int len);
 	void sha224_final(sha224_ctx *ctx, unsigned char *digest);
-
-private:
-	sha224_ctx ctx;
 	
 private:
 	void sha_init() {sha224_init(&ctx);};
 	void sha_update(const unsigned char *message, unsigned int len) {sha224_update(&ctx, message, len);};
 	void sha_final(unsigned char *digest) {sha224_final(&ctx,digest);};
+
+private:
+	sha224_ctx ctx;
 };
 
 struct sha512_ctx{
@@ -241,12 +241,12 @@ private:
 	void sha512_final(sha512_ctx *ctx, unsigned char *digest);
 
 private:
-	sha512_ctx ctx;
-
-private:
 	void sha_init() {sha512_init(&ctx);};
 	void sha_update(const unsigned char *message, unsigned int len) {sha512_update(&ctx, message, len);};
 	void sha_final(unsigned char *digest) {sha512_final(&ctx, digest);};
+
+private:
+	sha512_ctx ctx;
 };
 
 class sha384 : public sha2_base {
@@ -264,12 +264,12 @@ private:
 	void sha384_final(sha384_ctx *ctx, unsigned char *digest);
 
 private:
-	sha384_ctx ctx;
-
-private:
 	void sha_init() {sha384_init(&ctx);};
 	void sha_update(const unsigned char *message, unsigned int len) {sha384_update(&ctx,message,len);};
 	void sha_final(unsigned char *digest) {sha384_final(&ctx, digest);};
+
+private:
+	sha384_ctx ctx;
 };
 
 } //Firebird
