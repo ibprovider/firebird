@@ -18,7 +18,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * Updated for use in Firebird by Tony Whyman <tony@mwasoftware.co.uk>
  *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
@@ -33,14 +33,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
- 
+
  /*
   * This update is intended to make available the SHA-2 family of message
-  * digests as C++ classes for use in Firebird. sha224, sha256, sha384 and 
+  * digests as C++ classes for use in Firebird. sha224, sha256, sha384 and
   * sha512 are each implemented as separate classes. The class methods are
   * intended to be as similar as possible to the legacy class sha1 in order
   * to facilitate straightforward replacement.
-  * 
+  *
   * This implementation also comes with a NIST compliancy test for each
   * digest. This is enabled by building with the NIST_COMPLIANCY_TESTS symbol
   * defined.
@@ -71,11 +71,11 @@
 #define SHA224_BLOCK_SIZE  SHA256_BLOCK_SIZE
 
 namespace Firebird {
-	
+
 /* This template function provides a simple one line means of computing a SHA-2
  * digest from an arbitrary length message.
  */
-	
+
 template<class SHA>void get_digest(const unsigned char *message, size_t len, unsigned char *digest)
 {
     SHA sha;
@@ -100,15 +100,15 @@ template<class SHA> void hashBased64(Firebird::string& hash, const Firebird::str
 /* The sha2_base class is an abstract class that is the ancestor for all
  * the SHA-2 classes. It defines all public methods for the classes and
  * a common model of use.
- * 
+ *
  * When instatiated a SHA-2 class is already initialized for use. The message
  * for which a digest is required is then fed to the class using one of
  * the "process" methods, either as a single action or accumulatively.
- * 
+ *
  * When the entire message has been input, the resulting digest is returned
- * by a "getHash" method. Calling "getHash" also clears the digest and 
+ * by a "getHash" method. Calling "getHash" also clears the digest and
  * re-initializes the SHA-2 generator ready to compute a new digest.
- * 
+ *
  * A SHA-2 generator can be cleared down and re-initialized at any time
  * by calling the "reset" method.
  */

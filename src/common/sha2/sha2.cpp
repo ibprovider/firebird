@@ -18,7 +18,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * Updated for use in Firebird by Tony Whyman <tony@mwasoftware.co.uk>
  *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
@@ -210,7 +210,7 @@ sha2_types::uint64 sha512_k[80] =
              0x3c9ebe0a15c9bebcULL, 0x431d67c49c100d4cULL,
              0x4cc5d4becb3e42b6ULL, 0x597f299cfc657e2aULL,
              0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL};
-             
+
 /* SHA-256 context structure */
 
 void sha256_ctx::transf(const unsigned char *message,
