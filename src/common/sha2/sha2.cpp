@@ -679,8 +679,7 @@ void sha384_traits::sha_update(sha_ctx *ctx,const unsigned char *message,
 
 	rem_len = new_len % SHA384_BLOCK_SIZE;
 
-	memcpy(ctx->block, &shifted_message[block_nb << 7],
-		   rem_len);
+	memcpy(ctx->block, &shifted_message[block_nb << 7], rem_len);
 
 	ctx->len = rem_len;
 	ctx->tot_len += (block_nb + 1) << 7;
@@ -771,8 +770,7 @@ void sha224_traits::sha_update(sha_ctx *ctx, const unsigned char *message,
 
 	rem_len = new_len % SHA224_BLOCK_SIZE;
 
-	memcpy(ctx->block, &shifted_message[block_nb << 6],
-		   rem_len);
+	memcpy(ctx->block, &shifted_message[block_nb << 6], rem_len);
 
 	ctx->len = rem_len;
 	ctx->tot_len += (block_nb + 1) << 6;
@@ -837,6 +835,7 @@ void test(const char *vector, unsigned char *digest, unsigned int digest_size)
 	}
 
 	printf("H: %s\n", output);
+
 	if (strcmp(vector, output))
 	{
 		fprintf(stderr, "Test failed.\n");
