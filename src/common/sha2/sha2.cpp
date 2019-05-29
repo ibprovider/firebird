@@ -445,12 +445,7 @@ void sha256::sha256_final(sha256_ctx * ctx, unsigned char *digest)
 #endif /* !UNROLL_LOOPS */
 }
 
-/* SHA-512 functions */
-
-sha512::sha512() : sha2_base()
-{
-	sha512_init(&ctx);
-}
+/* SHA-512 context structure */
 
 void sha512_ctx::transf(const unsigned char *message,
                    unsigned int block_nb)
@@ -549,6 +544,13 @@ void sha512_ctx::transf(const unsigned char *message,
         ctx->h[6] += wv[6]; ctx->h[7] += wv[7];
 #endif /* !UNROLL_LOOPS */
     }
+}
+
+/* SHA-512 functions */
+
+sha512::sha512() : sha2_base()
+{
+	sha512_init(&ctx);
 }
 
 void sha512::sha512_init(sha512_ctx *ctx)
