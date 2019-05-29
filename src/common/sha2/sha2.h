@@ -129,7 +129,7 @@ public:
 	typedef unsigned long long uint64;
 	
 protected:
-	virtual void sha_init() {};
+	virtual void sha_init()=0;
 	virtual void sha_update(const unsigned char *message, unsigned int len)=0;
 	virtual void sha_final(unsigned char *digest)=0;
 	
