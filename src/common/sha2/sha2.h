@@ -163,19 +163,21 @@ public:
 #endif
 };
 
+struct sha256_ctx {
+	unsigned int tot_len;
+	unsigned int len;
+	unsigned char block[2 * SHA256_BLOCK_SIZE];
+	sha2_base::uint32 h[8];
+
+	void transf(const unsigned char *message,
+                   unsigned int block_nb);	
+};
+
 class sha256 : public sha2_base { 
 public:
 	sha256();
 	const unsigned int get_DigestSize() {return SHA256_DIGEST_SIZE;};
 	const unsigned int get_BlockSize() {return SHA256_BLOCK_SIZE;}; 
-	
-protected:
-	typedef struct {
-		unsigned int tot_len;
-		unsigned int len;
-		unsigned char block[2 * SHA256_BLOCK_SIZE];
-		uint32 h[8];
-	} sha256_ctx;
 	
 private:
 	void sha256_init(sha256_ctx * ctx);
@@ -186,9 +188,6 @@ private:
 protected:
 	sha256_ctx ctx;
 	
-	void sha256_transf(sha256_ctx * ctx, const unsigned char *message,
-                   unsigned int block_nb);	
-
 private:
 	void sha_init() {sha256_init(&ctx);};
 	void sha_update(const unsigned char *message, unsigned int len) {sha256_update(&ctx,message,len);};
