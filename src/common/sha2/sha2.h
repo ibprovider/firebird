@@ -128,11 +128,6 @@ public:
 	typedef unsigned int  uint32;
 	typedef unsigned long long uint64;
 	
-private:
-	virtual void sha_init()=0;
-	virtual void sha_update(const unsigned char *message, unsigned int len)=0;
-	virtual void sha_final(unsigned char *digest)=0;
-	
 public:
 	void reset() {sha_init();};
 	
@@ -161,6 +156,11 @@ public:
 	
 	void getHash(UCharBuffer& h);
 #endif
+	
+private:
+	virtual void sha_init()=0;
+	virtual void sha_update(const unsigned char *message, unsigned int len)=0;
+	virtual void sha_final(unsigned char *digest)=0;
 };
 
 struct sha256_ctx {
