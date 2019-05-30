@@ -65,8 +65,10 @@
     <ClCompile Include="..\..\..\src\common\dllinst.cpp" />
     <ClCompile Include="..\..\..\src\common\dsc.cpp" />
     <ClCompile Include="..\..\..\src\common\DynamicStrings.cpp" />
-    <ClCompile Include="..\..\..\src\common\enc.cpp" />
+    <ClCompile Include="..\..\..\src\common\enc2.cpp" />
     <ClCompile Include="..\..\..\src\common\fb_exception.cpp" />
+    <ClCompile Include="..\..\..\src\common\fb__enc_crypt.cpp" />
+    <ClCompile Include="..\..\..\src\common\fb__enc_crypt__helper.cpp" />
     <ClCompile Include="..\..\..\src\common\IntlParametersBlock.cpp" />
     <ClCompile Include="..\..\..\src\common\IntlUtil.cpp" />
     <ClCompile Include="..\..\..\src\common\isc.cpp" />
@@ -166,6 +168,8 @@
     <ClInclude Include="..\..\..\src\common\DynamicStrings.h" />
     <ClInclude Include="..\..\..\src\common\dyntable.h" />
     <ClInclude Include="..\..\..\src\common\enc_proto.h" />
+    <ClInclude Include="..\..\..\src\common\fb__enc_crypt.h" />
+    <ClInclude Include="..\..\..\src\common\fb__enc_crypt__helper.h" />
     <ClInclude Include="..\..\..\src\common\file_params.h" />
     <ClInclude Include="..\..\..\src\common\gdsassert.h" />
     <ClInclude Include="..\..\..\src\common\intlobj_new.h" />
