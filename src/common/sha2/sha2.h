@@ -206,9 +206,9 @@ public:
 	typedef sha256_ctx sha_ctx;
 
 public:
-	static const unsigned int get_DigestSize() {return SHA256_DIGEST_SIZE;};
+	static unsigned int get_DigestSize() {return SHA256_DIGEST_SIZE;};
 
-	static const unsigned int get_BlockSize() {return SHA256_BLOCK_SIZE;};
+	static unsigned int get_BlockSize() {return SHA256_BLOCK_SIZE;};
 
 	static void sha_init(sha_ctx* ctx);
 
@@ -222,9 +222,9 @@ public:
 	typedef sha256_ctx sha_ctx;
 
 public:
-	static const unsigned int get_DigestSize() {return SHA224_DIGEST_SIZE;};
+	static unsigned int get_DigestSize() {return SHA224_DIGEST_SIZE;};
 
-	static const unsigned int get_BlockSize() {return SHA224_BLOCK_SIZE;};
+	static unsigned int get_BlockSize() {return SHA224_BLOCK_SIZE;};
 
 	static void sha_init(sha_ctx* ctx);
 
