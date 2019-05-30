@@ -76,7 +76,7 @@ namespace Firebird {
  * digest from an arbitrary length message.
  */
 
-template<class SHA>void get_digest(const unsigned char *message, size_t len, unsigned char *digest)
+template<class SHA>void get_digest(const unsigned char* message, size_t len, unsigned char* digest)
 {
 	SHA sha;
 	sha.process(len, message);
@@ -198,8 +198,7 @@ struct sha256_ctx {
 	unsigned char block[2 * SHA256_BLOCK_SIZE];
 	sha2_types::uint32 h[8];
 
-	void transf(const unsigned char *message,
-				   unsigned int block_nb);
+	void transf(const unsigned char* message, unsigned int block_nb);
 };
 
 class sha256_traits: private sha2_types {
@@ -213,8 +212,7 @@ public:
 
 	static void sha_init(sha_ctx* ctx);
 
-	static void sha_update(sha_ctx* ctx, const unsigned char* message,
-				   unsigned int len);
+	static void sha_update(sha_ctx* ctx, const unsigned char* message, unsigned int len);
 
 	static void sha_final(sha_ctx *ctx, unsigned char* digest);
 };
@@ -230,8 +228,7 @@ public:
 
 	static void sha_init(sha_ctx* ctx);
 
-	static void sha_update(sha_ctx* ctx, const unsigned char* message,
-				   unsigned int len);
+	static void sha_update(sha_ctx* ctx, const unsigned char* message, unsigned int len);
 
 	static void sha_final(sha_ctx* ctx, unsigned char* digest);
 };
@@ -242,8 +239,7 @@ struct sha512_ctx{
 	unsigned char block[2 * SHA512_BLOCK_SIZE];
 	sha2_types::uint64 h[8];
 
-	void transf(const unsigned char* message,
-				   unsigned int block_nb);
+	void transf(const unsigned char* message, unsigned int block_nb);
 
 };
 
@@ -258,8 +254,7 @@ public:
 
 	static void sha_init(sha_ctx* ctx);
 
-	static void sha_update(sha_ctx* ctx, const unsigned char* message,
-				   unsigned int len);
+	static void sha_update(sha_ctx* ctx, const unsigned char* message, unsigned int len);
 
 	static void sha_final(sha_ctx* ctx, unsigned char* digest);
 };
@@ -275,8 +270,7 @@ public:
 
 	static void sha_init(sha_ctx* ctx);
 
-	static void sha_update(sha_ctx* ctx, const unsigned char* message,
-				   unsigned int len);
+	static void sha_update(sha_ctx* ctx, const unsigned char* message, unsigned int len);
 
 	static void sha_final(sha_ctx* ctx, unsigned char* digest);
 };
