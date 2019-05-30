@@ -206,9 +206,7 @@ public:
 	typedef sha256_ctx sha_ctx;
 
 public:
-	static const unsigned int get_DigestSize() {return SHA256_DIGEST_SIZE;};
-
-	static const unsigned int get_BlockSize() {return SHA256_BLOCK_SIZE;};
+	static unsigned int get_DigestSize() {return SHA256_DIGEST_SIZE;};
 
 	static void sha_init(sha_ctx* ctx);
 
@@ -222,9 +220,7 @@ public:
 	typedef sha256_ctx sha_ctx;
 
 public:
-	static const unsigned int get_DigestSize() {return SHA224_DIGEST_SIZE;};
-
-	static const unsigned int get_BlockSize() {return SHA224_BLOCK_SIZE;};
+	static unsigned int get_DigestSize() {return SHA224_DIGEST_SIZE;};
 
 	static void sha_init(sha_ctx* ctx);
 
@@ -250,8 +246,6 @@ public:
 public:
 	static unsigned int get_DigestSize() {return SHA512_DIGEST_SIZE;};
 
-	static unsigned int get_BlockSize() {return SHA512_BLOCK_SIZE;};
-
 	static void sha_init(sha_ctx* ctx);
 
 	static void sha_update(sha_ctx* ctx, const unsigned char* message, unsigned int len);
@@ -265,8 +259,6 @@ public:
 
 public:
 	static unsigned int get_DigestSize() {return SHA384_DIGEST_SIZE;};
-
-	static unsigned int get_BlockSize() {return SHA384_BLOCK_SIZE;};
 
 	static void sha_init(sha_ctx* ctx);
 
