@@ -342,8 +342,7 @@ void sha256_ctx::transf(const unsigned char* message,
 void sha256_traits::sha_init(sha256_ctx* ctx)
 {
 #ifndef UNROLL_LOOPS
-	int i;
-	for (i = 0; i < 8; i++)
+	for (int i = 0; i < 8; i++)
 	{
 		ctx->h[i] = sha256_h0[i];
 	}
@@ -361,12 +360,8 @@ void sha256_traits::sha_init(sha256_ctx* ctx)
 void sha256_traits::sha_update(sha256_ctx* ctx, const unsigned char* message,
 				   unsigned int len)
 {
-	unsigned int block_nb;
-	unsigned int new_len, rem_len, tmp_len;
-	const unsigned char *shifted_message;
-
-	tmp_len = SHA256_BLOCK_SIZE - ctx->len;
-	rem_len = len < tmp_len ? len : tmp_len;
+	const unsigned int tmp_len = SHA256_BLOCK_SIZE - ctx->len;
+	unsigned int rem_len = len < tmp_len ? len : tmp_len;
 
 	memcpy(&ctx->block[ctx->len], message, rem_len);
 
@@ -376,10 +371,10 @@ void sha256_traits::sha_update(sha256_ctx* ctx, const unsigned char* message,
 		return;
 	}
 
-	new_len = len - rem_len;
-	block_nb = new_len / SHA256_BLOCK_SIZE;
+	const unsigned int new_len = len - rem_len;
+	const unsigned int block_nb = new_len / SHA256_BLOCK_SIZE;
 
-	shifted_message = message + rem_len;
+	const unsigned char* const shifted_message = message + rem_len;
 
 	ctx->transf(ctx->block, 1);
 	ctx->transf(shifted_message, block_nb);
@@ -394,18 +389,10 @@ void sha256_traits::sha_update(sha256_ctx* ctx, const unsigned char* message,
 
 void sha256_traits::sha_final(sha256_ctx* ctx, unsigned char* digest)
 {
-	unsigned int block_nb;
-	unsigned int pm_len;
-	unsigned int len_b;
+	const unsigned int block_nb = (1 + ((SHA256_BLOCK_SIZE - 9) < (ctx->len % SHA256_BLOCK_SIZE)));
 
-#ifndef UNROLL_LOOPS
-	int i;
-#endif
-
-	block_nb = (1 + ((SHA256_BLOCK_SIZE - 9) < (ctx->len % SHA256_BLOCK_SIZE)));
-
-	len_b = (ctx->tot_len + ctx->len) << 3;
-	pm_len = block_nb << 6;
+	const unsigned int len_b = (ctx->tot_len + ctx->len) << 3;
+	const unsigned int pm_len = block_nb << 6;
 
 	memset(ctx->block + ctx->len, 0, pm_len - ctx->len);
 	ctx->block[ctx->len] = 0x80;
@@ -414,7 +401,7 @@ void sha256_traits::sha_final(sha256_ctx* ctx, unsigned char* digest)
 	ctx->transf(ctx->block, block_nb);
 
 #ifndef UNROLL_LOOPS
-	for (i = 0 ; i < 8; i++)
+	for (int i = 0 ; i < 8; i++)
 	{
 		UNPACK32(ctx->h[i], &digest[i << 2]);
 	}
