@@ -2870,6 +2870,70 @@ void AutoStorage::ProbeStack() const
 
 } // namespace Firebird
 
+void* operator new(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
+{
+	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
+}
+
+void* operator new[](size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
+{
+	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
+}
+
+void* operator new(size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) throw (OOM_EXCEPTION)
+{
+	return pool.allocate(s ALLOC_PASS_ARGS);
+}
+
+void* operator new[](size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) throw (OOM_EXCEPTION)
+{
+	return pool.allocate(s ALLOC_PASS_ARGS);
+}
+
+void operator delete(void* mem ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+
+void operator delete[](void* mem ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+
+void operator delete(void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+
+void operator delete[](void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+
+#ifdef DEBUG_GDS_ALLOC
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winline-new-delete"
+#endif
+
+void operator delete(void* mem) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+void operator delete[](void* mem) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
+#define FB_NEW new(__FILE__, __LINE__)
+#define FB_NEW_POOL(pool) new(pool, __FILE__, __LINE__)
+#define FB_NEW_RPT(pool, count) new(pool, count, __FILE__, __LINE__)
+#endif // DEBUG_GDS_ALLOC
 
 // These operators are needed for foreign libraries which use redefined new/delete.
 // Global operator "delete" is always redefined by firebird,

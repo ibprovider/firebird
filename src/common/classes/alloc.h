@@ -289,41 +289,17 @@ using Firebird::MemoryPool;
 
 // operators new and delete
 
-inline void* operator new(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
-{
-	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
-}
-inline void* operator new[](size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
-{
-	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
-}
+void* operator new(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION);
+void* operator new[](size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION);
 
-inline void* operator new(size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) throw (OOM_EXCEPTION)
-{
-	return pool.allocate(s ALLOC_PASS_ARGS);
-}
-inline void* operator new[](size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) throw (OOM_EXCEPTION)
-{
-	return pool.allocate(s ALLOC_PASS_ARGS);
-}
+void* operator new(size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) throw (OOM_EXCEPTION);
+void* operator new[](size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) throw (OOM_EXCEPTION);
 
-inline void operator delete(void* mem ALLOC_PARAMS) throw()
-{
-	MemoryPool::globalFree(mem);
-}
-inline void operator delete[](void* mem ALLOC_PARAMS) throw()
-{
-	MemoryPool::globalFree(mem);
-}
+void operator delete(void* mem ALLOC_PARAMS) throw();
+void operator delete[](void* mem ALLOC_PARAMS) throw();
 
-inline void operator delete(void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS) throw()
-{
-	MemoryPool::globalFree(mem);
-}
-inline void operator delete[](void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS) throw()
-{
-	MemoryPool::globalFree(mem);
-}
+void operator delete(void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS) throw();
+void operator delete[](void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS) throw();
 
 #ifdef DEBUG_GDS_ALLOC
 
@@ -332,14 +308,8 @@ inline void operator delete[](void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS
 #pragma clang diagnostic ignored "-Winline-new-delete"
 #endif
 
-inline void operator delete(void* mem) throw()
-{
-	MemoryPool::globalFree(mem);
-}
-inline void operator delete[](void* mem) throw()
-{
-	MemoryPool::globalFree(mem);
-}
+void operator delete(void* mem) throw();
+void operator delete[](void* mem) throw();
 
 #ifdef __clang__
 #pragma clang diagnostic pop
