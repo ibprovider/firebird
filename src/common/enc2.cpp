@@ -30,7 +30,7 @@ void ENC_crypt(TEXT*       const buf,
                const TEXT* const setting)
 {
     Firebird::FB__ENC_crypt::ENC_crypt
-	    (buf,
+        (buf,
          bufSize,
          key,
          setting);
