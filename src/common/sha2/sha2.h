@@ -164,7 +164,7 @@ public:
 		SHA_TRAITS::sha_update(&m_ctx, reinterpret_cast<const unsigned char*>(str), strlen(str));
 	}
 
-	void getHash(unsigned char *digest)
+	void getHash(unsigned char* digest)
 	{
 		SHA_TRAITS::sha_final(&m_ctx, digest);
 		SHA_TRAITS::sha_init(&m_ctx);
@@ -211,12 +211,12 @@ public:
 
 	static const unsigned int get_BlockSize() {return SHA256_BLOCK_SIZE;};
 
-	static void sha_init(sha_ctx * ctx);
+	static void sha_init(sha_ctx* ctx);
 
-	static void sha_update(sha_ctx *ctx, const unsigned char *message,
+	static void sha_update(sha_ctx* ctx, const unsigned char* message,
 				   unsigned int len);
 
-	static void sha_final(sha_ctx *ctx, unsigned char *digest);
+	static void sha_final(sha_ctx *ctx, unsigned char* digest);
 };
 
 class sha224_traits: private sha2_types {
@@ -228,12 +228,12 @@ public:
 
 	static const unsigned int get_BlockSize() {return SHA224_BLOCK_SIZE;};
 
-	static void sha_init(sha_ctx * ctx);
+	static void sha_init(sha_ctx* ctx);
 
-	static void sha_update(sha_ctx *ctx, const unsigned char *message,
+	static void sha_update(sha_ctx* ctx, const unsigned char* message,
 				   unsigned int len);
 
-	static void sha_final(sha_ctx *ctx, unsigned char *digest);
+	static void sha_final(sha_ctx* ctx, unsigned char* digest);
 };
 
 struct sha512_ctx{
@@ -242,7 +242,7 @@ struct sha512_ctx{
 	unsigned char block[2 * SHA512_BLOCK_SIZE];
 	sha2_types::uint64 h[8];
 
-	void transf(const unsigned char *message,
+	void transf(const unsigned char* message,
 				   unsigned int block_nb);
 
 };
@@ -256,12 +256,12 @@ public:
 
 	static unsigned int get_BlockSize() {return SHA512_BLOCK_SIZE;};
 
-	static void sha_init(sha_ctx * ctx);
+	static void sha_init(sha_ctx* ctx);
 
-	static void sha_update(sha_ctx *ctx, const unsigned char *message,
+	static void sha_update(sha_ctx* ctx, const unsigned char* message,
 				   unsigned int len);
 
-	static void sha_final(sha_ctx *ctx, unsigned char *digest);
+	static void sha_final(sha_ctx* ctx, unsigned char* digest);
 };
 
 class sha384_traits: private sha2_types {
@@ -273,12 +273,12 @@ public:
 
 	static unsigned int get_BlockSize() {return SHA384_BLOCK_SIZE;};
 
-	static void sha_init(sha_ctx * ctx);
+	static void sha_init(sha_ctx* ctx);
 
-	static void sha_update(sha_ctx *ctx, const unsigned char *message,
+	static void sha_update(sha_ctx* ctx, const unsigned char* message,
 				   unsigned int len);
 
-	static void sha_final(sha_ctx *ctx, unsigned char *digest);
+	static void sha_final(sha_ctx* ctx, unsigned char* digest);
 };
 
 } //Firebird
