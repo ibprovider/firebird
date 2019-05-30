@@ -19,6 +19,8 @@
 #ifndef _fb__enc_crypt_H_
 #define _fb__enc_crypt_H_
 
+#include "firebird.h"
+
 namespace Firebird{
 ////////////////////////////////////////////////////////////////////////////////
 //class FB__ENC_crypt
