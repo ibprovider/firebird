@@ -138,7 +138,7 @@ private:
 public:
 	sha2_base()
 	{
-		SHA_TRAITS::sha_init(&ctx);
+		SHA_TRAITS::sha_init(&m_ctx);
 	}
 
 	virtual ~sha2_base() {};
@@ -146,45 +146,45 @@ public:
 public:
 	void reset()
 	{
-		SHA_TRAITS::sha_init(&ctx);
+		SHA_TRAITS::sha_init(&m_ctx);
 	}
 
 	void process(size_t length, const void* bytes)
 	{
-		SHA_TRAITS::sha_update(&ctx, static_cast<const unsigned char*>(bytes), length);
+		SHA_TRAITS::sha_update(&m_ctx, static_cast<const unsigned char*>(bytes), length);
 	}
 
 	void process(size_t length, const unsigned char* message)
 	{
-		SHA_TRAITS::sha_update(&ctx, message, length);
+		SHA_TRAITS::sha_update(&m_ctx, message, length);
 	}
 
 	void process(const char* str)
 	{
-		SHA_TRAITS::sha_update(&ctx, reinterpret_cast<const unsigned char*>(str), strlen(str));
+		SHA_TRAITS::sha_update(&m_ctx, reinterpret_cast<const unsigned char*>(str), strlen(str));
 	}
 
 	void getHash(unsigned char *digest)
 	{
-		SHA_TRAITS::sha_final(&ctx, digest);
-		SHA_TRAITS::sha_init(&ctx);
+		SHA_TRAITS::sha_final(&m_ctx, digest);
+		SHA_TRAITS::sha_init(&m_ctx);
 	}
 
 #ifndef NIST_COMPLIANCY_TESTS
 	void process(const UCharBuffer& bytes)
 	{
-		SHA_TRAITS::sha_update(&ctx, bytes.begin(), bytes.getCount());
+		SHA_TRAITS::sha_update(&m_ctx, bytes.begin(), bytes.getCount());
 	}
 
 	void getHash(UCharBuffer& h)
 	{
-		SHA_TRAITS::sha_final(&ctx, h.getBuffer(SHA_TRAITS::get_DigestSize()));
-		SHA_TRAITS::sha_init(&ctx);
+		SHA_TRAITS::sha_final(&m_ctx, h.getBuffer(SHA_TRAITS::get_DigestSize()));
+		SHA_TRAITS::sha_init(&m_ctx);
 	}
 #endif
 
 private:
-	typename SHA_TRAITS::sha_ctx ctx;
+	typename SHA_TRAITS::sha_ctx m_ctx;
 };
 
 typedef sha2_base<sha224_traits> sha224;
