@@ -131,10 +131,14 @@ class sha2_base : public GlobalStorage {
 #else
 class sha2_base {
 #endif
+private:
+	sha2_base(const sha2_base&);
+	sha2_base& operator = (const sha2_base&);
+
 public:
 	sha2_base()
 	{
-		SHA_TRAITS::sha_init(&ctx);
+		SHA_TRAITS::sha_init(&m_ctx);
 	}
 
 	virtual ~sha2_base() {};
@@ -142,45 +146,45 @@ public:
 public:
 	void reset()
 	{
-		SHA_TRAITS::sha_init(&ctx);
+		SHA_TRAITS::sha_init(&m_ctx);
 	}
 
 	void process(size_t length, const void* bytes)
 	{
-		SHA_TRAITS::sha_update(&ctx, static_cast<const unsigned char*>(bytes), length);
+		SHA_TRAITS::sha_update(&m_ctx, static_cast<const unsigned char*>(bytes), length);
 	}
 
 	void process(size_t length, const unsigned char* message)
 	{
-		SHA_TRAITS::sha_update(&ctx, message, length);
+		SHA_TRAITS::sha_update(&m_ctx, message, length);
 	}
 
 	void process(const char* str)
 	{
-		SHA_TRAITS::sha_update(&ctx, reinterpret_cast<const unsigned char*>(str), strlen(str));
+		SHA_TRAITS::sha_update(&m_ctx, reinterpret_cast<const unsigned char*>(str), strlen(str));
 	}
 
-	void getHash(unsigned char *digest)
+	void getHash(unsigned char* digest)
 	{
-		SHA_TRAITS::sha_final(&ctx, digest);
-		SHA_TRAITS::sha_init(&ctx);
+		SHA_TRAITS::sha_final(&m_ctx, digest);
+		SHA_TRAITS::sha_init(&m_ctx);
 	}
 
 #ifndef NIST_COMPLIANCY_TESTS
 	void process(const UCharBuffer& bytes)
 	{
-		SHA_TRAITS::sha_update(&ctx, bytes.begin(), bytes.getCount());
+		SHA_TRAITS::sha_update(&m_ctx, bytes.begin(), bytes.getCount());
 	}
 
 	void getHash(UCharBuffer& h)
 	{
-		SHA_TRAITS::sha_final(&ctx, h.getBuffer(SHA_TRAITS::get_DigestSize()));
-		SHA_TRAITS::sha_init(&ctx);
+		SHA_TRAITS::sha_final(&m_ctx, h.getBuffer(SHA_TRAITS::get_DigestSize()));
+		SHA_TRAITS::sha_init(&m_ctx);
 	}
 #endif
 
 private:
-	typename SHA_TRAITS::sha_ctx ctx;
+	typename SHA_TRAITS::sha_ctx m_ctx;
 };
 
 typedef sha2_base<sha224_traits> sha224;
@@ -207,12 +211,12 @@ public:
 
 	static const unsigned int get_BlockSize() {return SHA256_BLOCK_SIZE;};
 
-	static void sha_init(sha_ctx * ctx);
+	static void sha_init(sha_ctx* ctx);
 
-	static void sha_update(sha_ctx *ctx, const unsigned char *message,
+	static void sha_update(sha_ctx* ctx, const unsigned char* message,
 				   unsigned int len);
 
-	static void sha_final(sha_ctx *ctx, unsigned char *digest);
+	static void sha_final(sha_ctx *ctx, unsigned char* digest);
 };
 
 class sha224_traits: private sha2_types {
@@ -224,12 +228,12 @@ public:
 
 	static const unsigned int get_BlockSize() {return SHA224_BLOCK_SIZE;};
 
-	static void sha_init(sha_ctx * ctx);
+	static void sha_init(sha_ctx* ctx);
 
-	static void sha_update(sha_ctx *ctx, const unsigned char *message,
+	static void sha_update(sha_ctx* ctx, const unsigned char* message,
 				   unsigned int len);
 
-	static void sha_final(sha_ctx *ctx, unsigned char *digest);
+	static void sha_final(sha_ctx* ctx, unsigned char* digest);
 };
 
 struct sha512_ctx{
@@ -238,7 +242,7 @@ struct sha512_ctx{
 	unsigned char block[2 * SHA512_BLOCK_SIZE];
 	sha2_types::uint64 h[8];
 
-	void transf(const unsigned char *message,
+	void transf(const unsigned char* message,
 				   unsigned int block_nb);
 
 };
@@ -252,12 +256,12 @@ public:
 
 	static unsigned int get_BlockSize() {return SHA512_BLOCK_SIZE;};
 
-	static void sha_init(sha_ctx * ctx);
+	static void sha_init(sha_ctx* ctx);
 
-	static void sha_update(sha_ctx *ctx, const unsigned char *message,
+	static void sha_update(sha_ctx* ctx, const unsigned char* message,
 				   unsigned int len);
 
-	static void sha_final(sha_ctx *ctx, unsigned char *digest);
+	static void sha_final(sha_ctx* ctx, unsigned char* digest);
 };
 
 class sha384_traits: private sha2_types {
@@ -269,12 +273,12 @@ public:
 
 	static unsigned int get_BlockSize() {return SHA384_BLOCK_SIZE;};
 
-	static void sha_init(sha_ctx * ctx);
+	static void sha_init(sha_ctx* ctx);
 
-	static void sha_update(sha_ctx *ctx, const unsigned char *message,
+	static void sha_update(sha_ctx* ctx, const unsigned char* message,
 				   unsigned int len);
 
-	static void sha_final(sha_ctx *ctx, unsigned char *digest);
+	static void sha_final(sha_ctx* ctx, unsigned char* digest);
 };
 
 } //Firebird
