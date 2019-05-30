@@ -76,7 +76,7 @@ namespace Firebird {
  * digest from an arbitrary length message.
  */
 
-template<class SHA>void get_digest(const unsigned char *message, size_t len, unsigned char *digest)
+template<class SHA>void get_digest(const unsigned char* message, size_t len, unsigned char* digest)
 {
 	SHA sha;
 	sha.process(len, message);
