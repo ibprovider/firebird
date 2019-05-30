@@ -131,6 +131,10 @@ class sha2_base : public GlobalStorage {
 #else
 class sha2_base {
 #endif
+private:
+	sha2_base(const sha2_base&);
+	sha2_base& operator = (const sha2_base&);
+
 public:
 	sha2_base()
 	{
