@@ -709,11 +709,15 @@ public:
 					}
 				}
 
-				if (send->p_acpt.p_acpt_type & pflag_compress)
-					authPort->initCompression();
 				authPort->send(send);
+
 				if (send->p_acpt.p_acpt_type & pflag_compress)
+				{
+					authPort->initCompression();
+
 					authPort->port_flags |= PORT_compressed;
+				}//if
+
 				memset(&send->p_auth_cont, 0, sizeof send->p_auth_cont);
 				return false;
 
@@ -2054,11 +2058,15 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: accepted ud=%d protocol=%x\n", returnData, port->port_protocol));
 
 	send->p_operation = returnData ? op_accept_data : op_accept;
-	if (send->p_acpt.p_acpt_type & pflag_compress)
-		port->initCompression();
+
 	port->send(send);
+
 	if (send->p_acpt.p_acpt_type & pflag_compress)
+	{
+    	port->initCompression();
+
 		port->port_flags |= PORT_compressed;
+	}//if
 
 	return true;
 }
@@ -2083,11 +2091,15 @@ void ConnectAuth::accept(PACKET* send, Auth::WriterImplementation*)
 		CSTRING* const s = &send->p_acpd.p_acpt_keys;
 		authPort->extractNewKeys(s);
 		send->p_acpd.p_acpt_authenticated = 1;
-		if (send->p_acpt.p_acpt_type & pflag_compress)
-			authPort->initCompression();
+
 		authPort->send(send);
+
 		if (send->p_acpt.p_acpt_type & pflag_compress)
+		{
+			authPort->initCompression();
+
 			authPort->port_flags |= PORT_compressed;
+		}//if
 	}
 }
 

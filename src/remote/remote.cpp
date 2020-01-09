@@ -1417,8 +1417,14 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 	SSHORT buffer_length, SSHORT* length)
 {
 #ifdef WIRE_COMPRESS_SUPPORT
-	if (!port->port_compressed)
+	if (!(port->port_flags & PORT_compressed))
+	{
+		fb_assert(!port->port_compressed);
+
 		return packet_receive(port, buffer, buffer_length, length);
+    }//if
+
+    fb_assert(port->port_compressed);
 
 	z_stream& strm = port->port_recv_stream;
 	strm.avail_out = buffer_length;
@@ -1496,18 +1502,18 @@ bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send,
 {
 #ifdef WIRE_COMPRESS_SUPPORT
 	rem_port* port = (rem_port*) xdrs->x_public;
-	if (!(port->port_compressed && (port->port_flags & PORT_compressed)))
+	if (!(port->port_flags & PORT_compressed))
+	{
+		fb_assert(!port->port_compressed);
+
 		return proto_write(xdrs);
+	}//if
+
+	fb_assert(port->port_compressed);
 
 	z_stream& strm = port->port_send_stream;
 	strm.avail_in = xdrs->x_private - xdrs->x_base;
 	strm.next_in = (Bytef*) xdrs->x_base;
-
-	if (!strm.next_out)
-	{
-		strm.avail_out = port->port_buff_size;
-		strm.next_out = (Bytef*) &port->port_compressed[REM_SEND_OFFSET(port->port_buff_size)];
-	}
 
 	bool expectMoreOut = flash;
 
@@ -1583,6 +1589,7 @@ void rem_port::initCompression()
 		int ret = zlib().deflateInit(&port_send_stream, Z_DEFAULT_COMPRESSION);
 		if (ret != Z_OK)
 			(Firebird::Arg::Gds(isc_random) << "compression stream init error").raise();		// add error code
+		port_send_stream.avail_out = 0;
 		port_send_stream.next_out = NULL;
 
 		port_recv_stream.zalloc = allocFunc;
@@ -1610,6 +1617,9 @@ void rem_port::initCompression()
 
 		memset(port_compressed, 0, port_buff_size * 2);
 		port_recv_stream.next_in = &port_compressed[REM_RECV_OFFSET(port_buff_size)];
+
+		port_send_stream.avail_out = port_buff_size;
+		port_send_stream.next_out = (Bytef*) &port_compressed[REM_SEND_OFFSET(port_buff_size)];
 
 #ifdef COMPRESS_DEBUG
 		fprintf(stderr, "Completed init port %p\n", this);
