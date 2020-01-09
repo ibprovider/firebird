@@ -709,11 +709,11 @@ public:
 					}
 				}
 
-				authPort->send(send);
+				authPort->send(send); //throw?
 
 				if (send->p_acpt.p_acpt_type & pflag_compress)
 				{
-					authPort->initCompression();
+					authPort->initCompression(); //throw
 
 					authPort->port_flags |= PORT_compressed;
 				}//if
@@ -2059,11 +2059,11 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 
 	send->p_operation = returnData ? op_accept_data : op_accept;
 
-	port->send(send);
+	port->send(send); //throw?
 
 	if (send->p_acpt.p_acpt_type & pflag_compress)
 	{
-    	port->initCompression();
+    	port->initCompression(); //throw
 
 		port->port_flags |= PORT_compressed;
 	}//if
@@ -2092,11 +2092,11 @@ void ConnectAuth::accept(PACKET* send, Auth::WriterImplementation*)
 		authPort->extractNewKeys(s);
 		send->p_acpd.p_acpt_authenticated = 1;
 
-		authPort->send(send);
+		authPort->send(send); //throw?
 
 		if (send->p_acpt.p_acpt_type & pflag_compress)
 		{
-			authPort->initCompression();
+			authPort->initCompression(); //throw
 
 			authPort->port_flags |= PORT_compressed;
 		}//if
