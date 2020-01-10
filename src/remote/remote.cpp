@@ -1417,14 +1417,14 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 	SSHORT buffer_length, SSHORT* length)
 {
 #ifdef WIRE_COMPRESS_SUPPORT
-	if (!(port->port_flags & PORT_compressed))
+	if (!port->port_compressed)
 	{
-		fb_assert(!port->port_compressed);
-
 		return packet_receive(port, buffer, buffer_length, length);
     }//if
 
     fb_assert(port->port_compressed);
+
+    // Attention: PORT_compression flag may still not setup!
 
 	z_stream& strm = port->port_recv_stream;
 	strm.avail_out = buffer_length;
@@ -1504,8 +1504,6 @@ bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send,
 	rem_port* port = (rem_port*) xdrs->x_public;
 	if (!(port->port_flags & PORT_compressed))
 	{
-		fb_assert(!port->port_compressed);
-
 		return proto_write(xdrs);
 	}//if
 

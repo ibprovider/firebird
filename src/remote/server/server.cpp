@@ -709,14 +709,29 @@ public:
 					}
 				}
 
-				authPort->send(send); //throw?
-
-				if (send->p_acpt.p_acpt_type & pflag_compress)
+				if ((send->p_acpt.p_acpt_type & pflag_compress) == 0)
 				{
+					authPort->send(send); //throw?
+				}
+				else
+				{
+					// Configuration of port for compression usage (1-3).
+					fb_assert(send->p_acpt.p_acpt_type & pflag_compress);
+
+					// 1. Prepare compression. Enable inflate.
 					authPort->initCompression(); //throw
 
+					// 2. Send uncompressed answer.
+					authPort->send(send); //throw?
+
+					// ATTENTION:
+					//  In this moment server may already got the compressed
+					//  packet from client and is waiting for finish of this
+					//  not completed answer to previous packet!
+
+					// 3. Enabled deflate.
 					authPort->port_flags |= PORT_compressed;
-				}//if
+				}//else
 
 				memset(&send->p_auth_cont, 0, sizeof send->p_auth_cont);
 				return false;
@@ -2059,14 +2074,29 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 
 	send->p_operation = returnData ? op_accept_data : op_accept;
 
-	port->send(send); //throw?
-
-	if (send->p_acpt.p_acpt_type & pflag_compress)
+	if ((send->p_acpt.p_acpt_type & pflag_compress) == 0)
 	{
-    	port->initCompression(); //throw
+		port->send(send); //throw?
+	}
+	else
+	{
+		// Configuration of port for compression usage (1-3).
+		fb_assert(send->p_acpt.p_acpt_type & pflag_compress);
 
+		// 1. Prepare compression. Enable inflate.
+		port->initCompression(); //throw
+
+		// 2. Send uncompressed answer.
+		port->send(send); //throw?
+
+		// ATTENTION:
+		//  In this moment server may already got the compressed
+		//  packet from client and is waiting for finish of this
+		//  not completed answer to previous packet!
+
+		// 3. Enabled deflate.
 		port->port_flags |= PORT_compressed;
-	}//if
+	}//else
 
 	return true;
 }
@@ -2092,14 +2122,29 @@ void ConnectAuth::accept(PACKET* send, Auth::WriterImplementation*)
 		authPort->extractNewKeys(s);
 		send->p_acpd.p_acpt_authenticated = 1;
 
-		authPort->send(send); //throw?
-
-		if (send->p_acpt.p_acpt_type & pflag_compress)
+		if ((send->p_acpt.p_acpt_type & pflag_compress) == 0)
 		{
+			authPort->send(send); //throw?
+		}
+		else
+		{
+			// Configuration of port for compression usage (1-3).
+			fb_assert(send->p_acpt.p_acpt_type & pflag_compress);
+
+			// 1. Prepare compression. Enable inflate.
 			authPort->initCompression(); //throw
 
+			// 2. Send uncompressed answer.
+			authPort->send(send); //throw?
+
+			// ATTENTION:
+			//  In this moment server may already got the compressed
+			//  packet from client and is waiting for finish of this
+			//  not completed answer to previous packet!
+
+			// 3. Enabled deflate.
 			authPort->port_flags |= PORT_compressed;
-		}//if
+		}//else
 	}
 }
 
