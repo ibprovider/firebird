@@ -1420,11 +1420,11 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 	if (!port->port_compressed)
 	{
 		return packet_receive(port, buffer, buffer_length, length);
-    }//if
+	}//if
 
-    fb_assert(port->port_compressed);
+	fb_assert(port->port_compressed);
 
-    // Attention: PORT_compression flag may still not setup!
+	// Attention: PORT_compression flag may still not setup!
 
 	z_stream& strm = port->port_recv_stream;
 	strm.avail_out = buffer_length;
