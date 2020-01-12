@@ -3964,7 +3964,7 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 
 		// If there isn't a auxiliary asynchronous port, make one now
 
-		if (!port->port_async)
+		if (!port->port_async2)
 		{
 			packet->p_operation = op_connect_request;
 			P_REQ* request = &packet->p_req;
@@ -3972,9 +3972,9 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 			request->p_req_type = P_REQ_async;
 			send_packet(port, packet);
 			receive_response(status, rdb, packet);
-			port->connect(packet);
+			port->connect2(packet);
 
-			rem_port* port_async = port->port_async;
+			RemPortPtr port_async = port->port_async2;
 			port_async->port_events_threadId = 
 				Thread::start(event_thread, port_async, THREAD_high, &port_async->port_events_thread);
 
@@ -3986,7 +3986,7 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 		Rvnt* rem_event = add_event(port);
 
 		rem_event->rvnt_callback = callback;
-		rem_event->rvnt_port = port->port_async;
+		rem_event->rvnt_port2 = port->port_async2;
 		rem_event->rvnt_length = length;
 		rem_event->rvnt_rdb = rdb;
 
@@ -5419,7 +5419,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
  *
  **************************************/
 
-	rem_port* port = NULL;
+	RemPortPtr port(NULL);
 	int inet_af = AF_UNSPEC;
 
 	cBlock.loadClnt(pb, &parSet);
@@ -5427,7 +5427,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 
 #ifdef WIN_NT
 	if (ISC_analyze_protocol(PROTOCOL_XNET, attach_name, node_name, NULL))
-		port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_UV, cBlock.getConfig(), ref_db_name);
+		port = XNET_analyze2(&cBlock, attach_name, flags & ANALYZE_UV, cBlock.getConfig(), ref_db_name);
 	else if (ISC_analyze_protocol(PROTOCOL_WNET, attach_name, node_name, WNET_SEPARATOR) ||
 		ISC_analyze_pclan(attach_name, node_name))
 	{
@@ -5439,7 +5439,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 			ISC_utf8ToSystem(node_name);
 		}
 
-		port = WNET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_UV,
+		port = WNET_analyze2(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_UV,
 			cBlock.getConfig(), ref_db_name);
 	}
 	else
@@ -5461,7 +5461,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 			ISC_utf8ToSystem(node_name);
 		}
 
-		port = INET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_UV, pb,
+		port = INET_analyze2(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_UV, pb,
 			cBlock.getConfig(), ref_db_name, cryptCb, inet_af);
 	}
 
@@ -5480,7 +5480,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 				ISC_unescape(node_name);
 				ISC_utf8ToSystem(node_name);
 
-				port = WNET_analyze(&cBlock, expanded_name, node_name.c_str(), flags & ANALYZE_UV,
+				port = WNET_analyze2(&cBlock, expanded_name, node_name.c_str(), flags & ANALYZE_UV,
 					cBlock.getConfig(), ref_db_name);
 			}
 		}
@@ -5512,19 +5512,19 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 #ifdef WIN_NT
 			if (!port)
 			{
-				port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_UV,
+				port = XNET_analyze2(&cBlock, attach_name, flags & ANALYZE_UV,
 					cBlock.getConfig(), ref_db_name);
 			}
 
 			if (!port)
 			{
-				port = WNET_analyze(&cBlock, attach_name, WNET_LOCALHOST, flags & ANALYZE_UV,
+				port = WNET_analyze2(&cBlock, attach_name, WNET_LOCALHOST, flags & ANALYZE_UV,
 					cBlock.getConfig(), ref_db_name);
 			}
 #endif
 			if (!port)
 			{
-				port = INET_analyze(&cBlock, attach_name, INET_LOCALHOST, flags & ANALYZE_UV, pb,
+				port = INET_analyze2(&cBlock, attach_name, INET_LOCALHOST, flags & ANALYZE_UV, pb,
 					cBlock.getConfig(), ref_db_name, cryptCb);
 			}
 		}
@@ -5955,10 +5955,10 @@ static void disconnect( rem_port* port)
 	// Clear context reference for the associated event handler
 	// to avoid SEGV during shutdown
 
-	if (port->port_async)
+	if (port->port_async2)
 	{
-		port->port_async->port_context = NULL;
-		port->port_async->port_flags |= PORT_disconnect;
+		port->port_async2->port_context = NULL;
+		port->port_async2->port_flags |= PORT_disconnect;
 	}
 
 	// Perform physical network disconnect and release
@@ -5994,11 +5994,11 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 
 		// read what should be an event message
 
-		rem_port* stuff = NULL;
+		RemPortPtr stuff(NULL);
 		P_OP operation = op_void;
 		{	// scope
 			RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-			stuff = port->receive(&packet);
+			stuff = port->receive2(&packet);
 
 			operation = packet.p_operation;
 
@@ -6644,7 +6644,7 @@ static void receive_packet_with_callback(rem_port* port, PACKET* packet)
 	UCharBuffer buf;
 	for (;;)
 	{
-		if (!port->receive(packet))
+		if (!port->receive2(packet))
 		{
 			Arg::Gds(isc_net_read_err).raise();
 		}

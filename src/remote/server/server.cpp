@@ -79,15 +79,86 @@
 using namespace Firebird;
 
 
-struct server_req_t : public GlobalStorage
+class server_req_t : public GlobalStorage
 {
+private:
+    server_req_t(const server_req_t&)=delete;
+	server_req_t& operator = (const server_req_t&)=delete;
+
+public:
 	server_req_t*	req_next;
 	server_req_t*	req_chain;
+
+private:
 	RemPortPtr		req_port;
+
+public:
 	PACKET			req_send;
 	PACKET			req_receive;
+
+#ifdef DEV_BUILD
+    long            m_debug__WAS_DELETED;
+    long            m_debug__port_guard;
+#endif
+
 public:
-	server_req_t() : req_next(0), req_chain(0) { }
+	server_req_t()
+     : req_next(0)
+     , req_chain(0)
+#ifdef DEV_BUILD
+     , m_debug__WAS_DELETED(0)
+     , m_debug__port_guard(0)
+#endif
+    {
+    
+    }
+
+   ~server_req_t()
+    {
+#ifdef DEV_BUILD
+     const auto x=::InterlockedCompareExchange(&m_debug__WAS_DELETED,1,0);
+
+     fb_assert(x==0);
+
+     auto const n=::InterlockedCompareExchange(&m_debug__port_guard,-1,0);
+
+     fb_assert(n==0);
+     fb_assert(m_debug__port_guard==-1);
+
+	 auto const copy_req_port=this->req_port.getPtr();
+
+     this->req_port=NULL;
+#endif
+    }
+
+   rem_port* get_req_port()
+   {
+    auto const n=::InterlockedIncrement(&m_debug__port_guard);
+
+    fb_assert(n>0);
+
+    rem_port* r=this->req_port;
+
+    auto const n1=::InterlockedDecrement(&m_debug__port_guard);
+
+    fb_assert(n1>=0);
+
+    return r;
+   }//get_req_port
+
+   void set_req_port(rem_port* p)
+   {
+    auto const n=::InterlockedCompareExchange(&m_debug__port_guard,-1,0);
+
+    fb_assert(n==0);
+    fb_assert(m_debug__port_guard==-1);
+
+    this->req_port=p;
+
+    auto const n1=::InterlockedCompareExchange(&m_debug__port_guard,0,-1);
+
+    fb_assert(n1==-1);
+   }//set_req_port
 };
 
 struct srvr : public GlobalStorage
@@ -928,7 +999,7 @@ public:
 	 *
 	 **************************************/
 	{
-		rem_port* port = rdb->rdb_port->port_async;
+		RemPortPtr port = rdb->rdb_port->port_async2;
 		if (!port || (port->port_flags & PORT_detached))
 			return;
 
@@ -1106,7 +1177,7 @@ static USHORT	check_statement_type(Rsr*);
 static bool		get_next_msg_no(Rrq*, USHORT, USHORT*);
 static Rtr*		make_transaction(Rdb*, ITransaction*);
 static void		ping_connection(rem_port*, PACKET*);
-static bool		process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_port** result);
+static bool		process_packet(rem_port* port, PACKET* sendL, PACKET* receive, RemPortPtr* result1);
 static void		release_blob(Rbl*);
 static void		release_event(Rvnt*);
 static void		release_request(Rrq*, bool rlsIface = false);
@@ -1331,7 +1402,7 @@ void SRVR_main(rem_port* main_port, USHORT flags)
 
 		try
 		{
-			rem_port* port = main_port->receive(&receive);
+			RemPortPtr port (main_port->receive2(&receive));
 			if (!port) {
 				break;
 			}
@@ -1362,7 +1433,7 @@ static void free_request(server_req_t* request)
  **************************************/
 	MutexLockGuard queGuard(request_que_mutex, FB_FUNCTION);
 
-	request->req_port = 0;
+	request->set_req_port(0);
 	request->req_next = free_requests;
 	free_requests = request;
 }
@@ -1458,7 +1529,7 @@ static bool link_request(rem_port* port, server_req_t* request)
 	{
 		for (; queue; queue = queue->req_next)
 		{
-			if (queue->req_port == port)
+			if (queue->get_req_port() == port)
 			{
 				// Don't queue a dummy keepalive packet if there is a request on this port
 				if (operation == op_dummy)
@@ -1597,7 +1668,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						RefMutexGuard queGuard(*port->port_que_sync, FB_FUNCTION);
 
 						const rem_port::RecvQueState recvState = port->getRecvState();
-						port->receive(&request->req_receive);
+						port->receive2(&request->req_receive);
 
 						if (request->req_receive.p_operation == op_partial)
 						{
@@ -1622,7 +1693,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 							port->port_server_crypt_callback->wakeup(0, NULL);
 					}
 
-					request->req_port = port;
+					request->set_req_port(port);
 					if (portLocked)
 					{
 						portGuard.leave();
@@ -1658,11 +1729,11 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 			// All worker threads are stopped and will never run any more
 			// Disconnect remaining ports gracefully
-			rem_port* run_port = main_port;
+			RemPortPtr run_port(main_port);
 			while (run_port)
 			{
-				rem_port* current_port = run_port;	// important order of operations
-				run_port = run_port->port_next;		// disconnect() can modify linked list of ports
+				RemPortPtr current_port = run_port;	// important order of operations
+				run_port = run_port->port_next2;		// disconnect() can modify linked list of ports
 				if (!(current_port->port_flags & PORT_disconnect))
 					current_port->disconnect(NULL, NULL);
 			}
@@ -1730,9 +1801,9 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			}
 		}
 
-		if (main_port->port_async_receive)
+		if (main_port->port_async_receive2)
 		{
-			REMOTE_free_packet(main_port->port_async_receive, &asyncPacket);
+			REMOTE_free_packet(main_port->port_async_receive2, &asyncPacket);
 		}
 	}
 	catch (const Exception&)
@@ -1800,7 +1871,7 @@ static void setErrorStatus(IStatus* status)
 		status->setErrors(loginError.value());
 }
 
-static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
+static bool accept_connection(rem_port* const port, P_CNCT* const connect, PACKET* const send)
 {
 /**************************************
  *
@@ -2461,7 +2532,7 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 			Config::getDefaultConfig()->getRemoteAuxPort() : 0;
 		GlobalPortLock auxPortLock(aux_port_id);
 
-		rem_port* const aux_port = port->request(send);
+		RemPortPtr aux_port = port->request2(send);
 
 		port->send_response(send, rdb->rdb_id, send->p_resp.p_resp_data.cstr_length,
 							&status_vector, false);
@@ -2477,7 +2548,7 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 			bool connected = false;
 			try
 			{
-				connected = aux_port->connect(send) != NULL;
+				connected = aux_port->connect2(send) != NULL;
 				if (connected)
 				{
 					aux_port->port_context = rdb;
@@ -2491,8 +2562,8 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 
 			if (!connected)
 			{
-				fb_assert(port->port_async == aux_port);
-				port->port_async = NULL;
+				fb_assert(port->port_async2 == aux_port);
+				port->port_async2 = NULL;
 				aux_port->disconnect();
 			}
 		}
@@ -2858,14 +2929,14 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	// See interface.cpp - event_thread().
 
 	PACKET *packet = &rdb->rdb_packet;
-	if (this->port_async)
+	if (this->port_async2)
 	{
 		if ((this->port_type == rem_port::XNET) || (this->port_type == rem_port::PIPE))
 		{
 			packet->p_operation = op_disconnect;
-			this->port_async->send(packet);
+			this->port_async2->send(packet);
 		}
-		this->port_async->port_flags |= PORT_disconnect;
+		this->port_async2->port_flags |= PORT_disconnect;
 	}
 
 	LocalStatus ls;
@@ -2927,8 +2998,8 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	printf("disconnect(server)        free rdb         %x\n", rdb);
 #endif
 	this->port_context = NULL;
-	if (this->port_async)
-		this->port_async->port_context = NULL;
+	if (this->port_async2)
+		this->port_async2->port_context = NULL;
 	delete rdb;
 	if (this->port_connection)
 	{
@@ -2994,8 +3065,8 @@ void rem_port::drop_database(P_RLSE* /*release*/, PACKET* sendL)
 		rdb->rdb_iface = NULL;
 	}
 	port_flags |= PORT_detached;
-	if (port_async)
-		port_async->port_flags |= PORT_detached;
+	if (port_async2)
+		port_async2->port_flags |= PORT_detached;
 
 	while (rdb->rdb_events)
 		release_event(rdb->rdb_events);
@@ -3074,11 +3145,11 @@ ISC_STATUS rem_port::end_database(P_RLSE* /*release*/, PACKET* sendL)
 		return this->send_response(sendL, 0, 0, &status_vector, false);
 
 	port_flags |= PORT_detached;
-	if (port_async)
+	if (port_async2)
 	{
-		port_async->port_flags |= PORT_detached;
+		port_async2->port_flags |= PORT_detached;
 
-		RefMutexGuard portGuard(*port_async->port_sync, FB_FUNCTION);
+		RefMutexGuard portGuard(*port_async2->port_sync, FB_FUNCTION);
 		while (rdb->rdb_events)
 			release_event(rdb->rdb_events);
 	}
@@ -4326,6 +4397,10 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 
 class DecrementRequestsQueued
 {
+private:
+    DecrementRequestsQueued(const DecrementRequestsQueued&)=delete;
+    DecrementRequestsQueued& operator = (const DecrementRequestsQueued&)=delete;
+
 public:
 	explicit DecrementRequestsQueued(rem_port* port) :
 		m_port(port)
@@ -4342,7 +4417,7 @@ private:
 
 // Declared in serve_proto.h
 
-static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_port** result)
+static bool process_packet(rem_port* port, PACKET* const sendL, PACKET* const receive, RemPortPtr* const result1)
 {
 /**************************************
  *
@@ -4605,7 +4680,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 
 		if (port && port->port_state == rem_port::BROKEN)
 		{
-			if (!port->port_parent)
+			if (!port->port_parent1)
 			{
 				if (!Worker::isShuttingDown() && !(port->port_flags & (PORT_rdb_shutdown | PORT_detached)))
 					gds__log("SERVER/process_packet: broken port, server exiting");
@@ -4644,9 +4719,9 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		return false;
 	}
 
-	if (result)
+	if (result1)
 	{
-		*result = port;
+		*result1 = port;
 	}
 
 	return true;
@@ -4842,7 +4917,7 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 	event->rvnt_id = stuff->p_event_rid;
 	event->rvnt_rdb = rdb;
 
-	rem_port* asyncPort = rdb->rdb_port->port_async;
+	rem_port* asyncPort = rdb->rdb_port->port_async2;
 	if (!asyncPort || (asyncPort->port_flags & PORT_detached))
 		Arg::Gds(isc_net_event_connect_err).copyTo(&status_vector);
 	else
@@ -5987,13 +6062,16 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 
 			while (request)
 			{
-				rem_port* port = NULL;
+				RemPortPtr port(NULL);
 
 				// Bind a thread to a port.
+				rem_port* const request_req_port(request->get_req_port());
 
-				if (request->req_port->port_server_flags & SRVR_thread_per_port)
+				fb_assert(request_req_port);
+
+				if (request_req_port->port_server_flags & SRVR_thread_per_port)
 				{
-					port = request->req_port;
+					port = request_req_port;
 					free_request(request);
 
 					SRVR_main(port, port->port_server_flags);
@@ -6012,12 +6090,12 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 
 				// Validate port.  If it looks ok, process request
 
-				RefMutexEnsureUnlock portQueGuard(*request->req_port->port_que_sync, FB_FUNCTION);
+				RefMutexEnsureUnlock portQueGuard(*request_req_port->port_que_sync, FB_FUNCTION);
 				{ // port_sync scope
-					RefMutexGuard portGuard(*request->req_port->port_sync, FB_FUNCTION);
+					RefMutexGuard portGuard(*request_req_port->port_sync, FB_FUNCTION);
 
-					if (request->req_port->port_state == rem_port::DISCONNECTED ||
-						!process_packet(request->req_port, &request->req_send, &request->req_receive, &port))
+					if (request_req_port->port_state == rem_port::DISCONNECTED ||
+						!process_packet(request_req_port, &request->req_send, &request->req_receive, &port))
 					{
 						port = NULL;
 					}
@@ -6029,7 +6107,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 					// reading packet and wait until rest of data arrives
 					if (port)
 					{
-						fb_assert(port == request->req_port);
+						fb_assert(port.getPtr() == request_req_port);
 
 						// It is very important to not release port_que_sync before
 						// port_sync, else we can miss data arrived at time between
@@ -6041,7 +6119,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 							server_req_t* new_request = alloc_request();
 
 							const rem_port::RecvQueState recvState = port->getRecvState();
-							port->receive(&new_request->req_receive);
+							port->receive2(&new_request->req_receive);
 
 							if (new_request->req_receive.p_operation == op_partial)
 							{
@@ -6053,7 +6131,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 								if (!port->haveRecvData())
 									port->clearRecvQue();
 
-								new_request->req_port = port;
+								new_request->set_req_port(port);
 
 #ifdef DEV_BUILD
 								const bool ok =
@@ -6172,7 +6250,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
  *	If possible, accept incoming data asynchronously
  *
  **************************************/
-	if (! port_async_receive)
+	if (! port_async_receive2)
 	{
 		return 0;
 	}
@@ -6187,7 +6265,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 		return 0;
 	}
 
-	SLONG original_op = xdr_peek_long(&port_async_receive->port_receive, buffer, dataSize);
+	SLONG original_op = xdr_peek_long(&port_async_receive2->port_receive, buffer, dataSize);
 	switch (original_op)
 	{
 	case op_cancel:
@@ -6202,17 +6280,17 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 		static GlobalPtr<Mutex> mutex;
 		MutexLockGuard guard(mutex, FB_FUNCTION);
 
-		port_async_receive->clearRecvQue();
-		port_async_receive->port_receive.x_handy = 0;
-		port_async_receive->port_protocol = port_protocol;
-		memcpy(port_async_receive->port_queue.add().getBuffer(dataSize), buffer, dataSize);
+		port_async_receive2->clearRecvQue();
+		port_async_receive2->port_receive.x_handy = 0;
+		port_async_receive2->port_protocol = port_protocol;
+		memcpy(port_async_receive2->port_queue.add().getBuffer(dataSize), buffer, dataSize);
 
 		// It's required, that async packets follow simple rule:
 		// xdr packet fits into network packet.
-		port_async_receive->receive(asyncPacket);
+		port_async_receive2->receive2(asyncPacket);
 	}
 
-	const SSHORT asyncSize = dataSize - port_async_receive->port_receive.x_handy;
+	const SSHORT asyncSize = dataSize - port_async_receive2->port_receive.x_handy;
 	fb_assert(asyncSize >= 0);
 
 	switch (asyncPacket->p_operation)
@@ -6221,8 +6299,8 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 		cancel_operation(this, asyncPacket->p_cancel_op.p_co_kind);
 		break;
 	case op_abort_aux_connection:
-		if (port_async && (port_async->port_flags & PORT_connecting))
-			port_async->abort_aux_connection();
+		if (port_async2 && (port_async2->port_flags & PORT_connecting))
+			port_async2->abort_aux_connection();
 		break;
 	case op_crypt_key_callback:
 		port_server_crypt_callback->wakeup(asyncPacket->p_cc.p_cc_data.cstr_length,

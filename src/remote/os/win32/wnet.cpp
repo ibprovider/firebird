@@ -63,9 +63,9 @@ static volatile bool wnet_initialized = false;
 static volatile bool wnet_shutdown = false;
 
 static bool		accept_connection(rem_port*, const P_CNCT*);
-static rem_port*		alloc_port(rem_port*);
-static rem_port*		aux_connect(rem_port*, PACKET*);
-static rem_port*		aux_request(rem_port*, PACKET*);
+static RemPortPtr		alloc_port2(rem_port*);
+static RemPortPtr 		aux_connect2(rem_port*, PACKET*);
+static RemPortPtr 		aux_request2(rem_port*, PACKET*);
 static bool		connect_client(rem_port*);
 static void		disconnect(rem_port*);
 #ifdef NOT_USED_OR_REPLACED
@@ -73,7 +73,7 @@ static void		exit_handler(void*);
 #endif
 static void		force_close(rem_port*);
 static rem_str*		make_pipe_name(const RefPtr<const Config>&, const TEXT*, const TEXT*, const TEXT*);
-static rem_port*	receive(rem_port*, PACKET*);
+static RemPortPtr	receive2(rem_port*, PACKET*);
 static int		send_full(rem_port*, PACKET*);
 static int		send_partial(rem_port*, PACKET*);
 static int		xdrwnet_create(XDR*, rem_port*, UCHAR*, USHORT, xdr_op);
@@ -100,7 +100,7 @@ static xdr_t::xdr_ops wnet_ops =
 };
 
 
-rem_port* WNET_analyze(ClntAuthBlock* cBlock,
+RemPortPtr WNET_analyze2(ClntAuthBlock* cBlock,
 					   const PathName& file_name,
 					   const TEXT* node_name,
 					   bool uv_flag,
@@ -184,10 +184,10 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 
 	// If we can't talk to a server, punt. Let somebody else generate an error.
 
-	rem_port* port = NULL;
+	RemPortPtr port(NULL);
 	try
 	{
-		port = WNET_connect(node_name, packet, 0, config);
+		port = WNET_connect2(node_name, packet, 0, config);
 	}
 	catch (const Exception&)
 	{
@@ -199,7 +199,7 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 
 	rdb->rdb_port = port;
 	port->port_context = rdb;
-	port->receive(packet);
+	port->receive2(packet);
 
 	P_ACPT* accept = NULL;
 	switch (packet->p_operation)
@@ -269,7 +269,7 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 }
 
 
-rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::RefPtr<const Config>* config)
+RemPortPtr WNET_connect2(const TEXT* name, PACKET* packet, USHORT flag, Firebird::RefPtr<const Config>* config)
 {
 /**************************************
  *
@@ -283,7 +283,7 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::
  *	connect is for a server process.
  *
  **************************************/
-	rem_port* const port = alloc_port(0);
+	RemPortPtr port = alloc_port2(0);
 	if (config)
 	{
 		port->port_config = *config;
@@ -309,7 +309,7 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::
 			{
 				wnet_error(port, "CreateFile", isc_net_connect_err, status);
 				disconnect(port);
-				return NULL;
+				return RemPortPtr(NULL);
 			}
 			WaitNamedPipe(port->port_connection->str_data, 3000L);
 		}
@@ -343,7 +343,7 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::
 
 			wnet_error(port, "CreateNamedPipe", isc_net_connect_listen_err, dwError);
 			disconnect(port);
-			return NULL;
+			return RemPortPtr(NULL);
 		}
 
 		if (!connect_client(port))
@@ -404,11 +404,11 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::
 		temp.raise();
 	}
 
-	return NULL;
+	return RemPortPtr(NULL);
 }
 
 
-rem_port* WNET_reconnect(HANDLE handle)
+RemPortPtr WNET_reconnect2(HANDLE handle)
 {
 /**************************************
  *
@@ -422,7 +422,7 @@ rem_port* WNET_reconnect(HANDLE handle)
  *	a port block.
  *
  **************************************/
-	rem_port* const port = alloc_port(0);
+	RemPortPtr port = alloc_port2(0);
 
 	delete port->port_connection;
 	port->port_connection = make_pipe_name(port->getPortConfig(), NULL, SERVER_PIPE_SUFFIX, 0);
@@ -484,7 +484,7 @@ static bool accept_connection( rem_port* port, const P_CNCT* cnct)
 }
 
 
-static rem_port* alloc_port( rem_port* parent)
+static RemPortPtr alloc_port2( rem_port* parent)
 {
 /**************************************
  *
@@ -508,7 +508,7 @@ static rem_port* alloc_port( rem_port* parent)
 		}
 	}
 
-	rem_port* port = FB_NEW rem_port(rem_port::PIPE, BUFFER_SIZE * 2);
+	RemPortPtr port = rem_port::createRemPortInstance(rem_port::PIPE, BUFFER_SIZE * 2);
 
 	TEXT buffer[BUFFER_TINY];
 	ISC_get_host(buffer, sizeof(buffer));
@@ -520,11 +520,11 @@ static rem_port* alloc_port( rem_port* parent)
 	port->port_accept = accept_connection;
 	port->port_disconnect = disconnect;
 	port->port_force_close = force_close;
-	port->port_receive_packet = receive;
+	port->port_receive_packet2 = receive2;
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
-	port->port_connect = aux_connect;
-	port->port_request = aux_request;
+	port->port_connect2 = aux_connect2;
+	port->port_request2 = aux_request2;
 	port->port_buff_size = BUFFER_SIZE;
 
 	port->port_event = CreateEvent(NULL, TRUE, TRUE, NULL);
@@ -546,7 +546,7 @@ static rem_port* alloc_port( rem_port* parent)
 }
 
 
-static rem_port* aux_connect( rem_port* port, PACKET* packet)
+static RemPortPtr aux_connect2( rem_port* port, PACKET* packet)
 {
 /**************************************
  *
@@ -564,10 +564,10 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
 	if (port->port_server_flags)
 	{
 		if (!connect_client(port))
-			return NULL;
+			return RemPortPtr(NULL);
 
 		port->port_flags |= PORT_async;
-		return port;
+		return RemPortPtr(port);
 	}
 
 	// The server will be sending its process id in the packet to
@@ -586,8 +586,8 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
 		p = str_pid;
 	}
 
-	rem_port* const new_port = alloc_port(port->port_parent);
-	port->port_async = new_port;
+	RemPortPtr new_port = alloc_port2(port->port_parent1);
+	port->port_async2 = new_port;
 	new_port->port_flags = port->port_flags & PORT_no_oob;
 	new_port->port_flags |= PORT_async;
 	new_port->port_connection = make_pipe_name(port->getPortConfig(),
@@ -604,7 +604,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
 		if (status != ERROR_PIPE_BUSY)
 		{
 			wnet_error(new_port, "CreateFile", isc_net_event_connect_err, status);
-			return NULL;
+			return RemPortPtr(NULL);
 		}
 		WaitNamedPipe(new_port->port_connection->str_data, 3000L);
 	}
@@ -613,7 +613,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
 }
 
 
-static rem_port* aux_request( rem_port* vport, PACKET* packet)
+static RemPortPtr aux_request2( rem_port* vport, PACKET* packet)
 {
 /**************************************
  *
@@ -632,10 +632,10 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 
 	const DWORD server_pid = (vport->port_server_flags & SRVR_multi_client) ?
 		++event_counter : GetCurrentProcessId();
-	rem_port* const new_port = alloc_port(vport->port_parent);
+	RemPortPtr new_port = alloc_port2(vport->port_parent1);
 	new_port->port_server_flags = vport->port_server_flags;
 	new_port->port_flags = (vport->port_flags & PORT_no_oob) | PORT_connecting;
-	vport->port_async = new_port;
+	vport->port_async2 = new_port;
 
 	TEXT str_pid[32];
 	wnet_make_file_name(str_pid, server_pid);
@@ -656,7 +656,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 	{
 		wnet_error(new_port, "CreateNamedPipe", isc_net_event_listen_err, ERRNO);
 		disconnect(new_port);
-		return NULL;
+		return RemPortPtr(NULL);
 	}
 
 	P_RESP* response = &packet->p_resp;
@@ -724,10 +724,10 @@ static void disconnect(rem_port* port)
  *
  **************************************/
 
-	if (port->port_async)
+	if (port->port_async2)
 	{
-		disconnect(port->port_async);
-		port->port_async = NULL;
+		disconnect(port->port_async2);
+		port->port_async2 = NULL;
 	}
 	port->port_context = NULL;
 
@@ -752,7 +752,9 @@ static void disconnect(rem_port* port)
 	}
 
 	wnet_ports->unRegisterPort(port);
-	port->release();
+	
+    //[2020-01-12] Hasta la vista
+    //port->release();
 }
 
 
@@ -864,7 +866,7 @@ static rem_str* make_pipe_name(const RefPtr<const Config>& config, const TEXT* c
 }
 
 
-static rem_port* receive( rem_port* main_port, PACKET* packet)
+static RemPortPtr receive2( rem_port* main_port, PACKET* packet)
 {
 /**************************************
  *
@@ -886,7 +888,7 @@ static rem_port* receive( rem_port* main_port, PACKET* packet)
 	if (!xdr_protocol(&main_port->port_receive, packet))
 		packet->p_operation = op_exit;
 
-	return main_port;
+	return RemPortPtr(main_port);
 }
 
 

@@ -593,15 +593,15 @@ void REMOTE_reset_statement( Rsr* statement)
 void rem_port::linkParent(rem_port* const parent)
 {
 	fb_assert(parent);
-	fb_assert(this->port_parent == NULL);
+	fb_assert(this->port_parent1 == NULL);
 
-	this->port_parent = parent;
-	this->port_next = parent->port_clients;
+	this->port_parent1 = parent;
+	this->port_next2 = parent->port_clients2;
 	this->port_server = parent->port_server;
 	this->port_server_flags = parent->port_server_flags;
 	this->port_config = parent->port_config;
 
-	parent->port_clients = parent->port_next = this;
+	parent->port_clients2 = parent->port_next2 = this;
 }
 
 const Firebird::RefPtr<const Config>& rem_port::getPortConfig() const
@@ -616,24 +616,24 @@ Firebird::RefPtr<const Config> rem_port::getPortConfig()
 
 void rem_port::unlinkParent()
 {
-	if (this->port_parent == NULL)
+	if (this->port_parent1 == NULL)
 		return;
 
 #ifdef DEV_BUILD
 	bool found = false;
 #endif
 
-	for (rem_port** ptr = &this->port_parent->port_clients; *ptr; ptr = &(*ptr)->port_next)
+	for (RemPortPtr* ptr = &this->port_parent1->port_clients2; *ptr; ptr = &(*ptr)->port_next2)
 	{
 		if (*ptr == this)
 		{
-			*ptr = this->port_next;
+			*ptr = this->port_next2;
 
-			if (ptr == &this->port_parent->port_clients)
+			if (ptr == &this->port_parent1->port_clients2)
 			{
-				fb_assert(this->port_parent->port_next == this);
+				fb_assert(this->port_parent1->port_next2 == this);
 
-				this->port_parent->port_next = *ptr;
+				this->port_parent1->port_next2 = *ptr;
 			}
 
 #ifdef DEV_BUILD
@@ -645,7 +645,7 @@ void rem_port::unlinkParent()
 
 	fb_assert(found);
 
-	this->port_parent = NULL;
+	this->port_parent1 = NULL;
 }
 
 bool rem_port::accept(p_cnct* cnct)
@@ -663,9 +663,9 @@ void rem_port::force_close()
 	(*this->port_force_close)(this);
 }
 
-rem_port* rem_port::receive(PACKET* pckt)
+RemPortPtr rem_port::receive2(PACKET* pckt)
 {
-	return (*this->port_receive_packet)(this, pckt);
+	return (*this->port_receive_packet2)(this, pckt);
 }
 
 bool rem_port::select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port)
@@ -691,14 +691,14 @@ XDR_INT rem_port::send_partial(PACKET* pckt)
 	return (*this->port_send_partial)(this, pckt);
 }
 
-rem_port* rem_port::connect(PACKET* pckt)
+RemPortPtr rem_port::connect2(PACKET* pckt)
 {
-	return (*this->port_connect)(this, pckt);
+	return (*this->port_connect2)(this, pckt);
 }
 
-rem_port* rem_port::request(PACKET* pckt)
+RemPortPtr rem_port::request2(PACKET* pckt)
 {
-	return (*this->port_request)(this, pckt);
+	return (*this->port_request2)(this, pckt);
 }
 
 void rem_port::auxAcceptError(PACKET* packet)
@@ -1240,7 +1240,7 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 
 				// Validate answer - decryptor is not affected by port_crypt_complete,
 				// therefore OK to do
-				receive(&crypt);
+				RemPortPtr xxxx=receive2(&crypt);
 				checkResponse(&statusWrapper, &crypt);
 
 				// Complete port-crypt init
@@ -1388,6 +1388,8 @@ namespace {
 
 rem_port::~rem_port()
 {
+    fb_assert(::InterlockedIncrement(&m_debug__DCR_STEP)==1);
+
 	delete port_srv_auth;
 	delete port_srv_auth_block;
 	delete port_version;
@@ -1408,7 +1410,11 @@ rem_port::~rem_port()
 		Firebird::PluginManagerInterfacePtr()->releasePlugin(port_crypt_plugin);
 
 #ifdef DEV_BUILD
-	--portCounter;
+	{
+     const auto xxx=--portCounter;
+
+     fb_assert(xxx>=0);
+    }
 #endif
 
 #ifdef WIRE_COMPRESS_SUPPORT
@@ -1418,6 +1424,9 @@ rem_port::~rem_port()
 		zlib().inflateEnd(&port_recv_stream);
 	}
 #endif
+
+    fb_assert(::InterlockedIncrement(&m_debug__DCR_STEP)==2);
+    fb_assert(m_debug__DCR_STEP==2);
 }
 
 bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer,

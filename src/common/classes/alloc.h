@@ -379,20 +379,41 @@ namespace Firebird
 	public:
 		void* operator new(size_t size ALLOC_PARAMS)
 		{
-			return getDefaultMemoryPool()->allocate(size ALLOC_PASS_ARGS);
+			return malloc(size); //getDefaultMemoryPool()->allocate(size ALLOC_PASS_ARGS);
 		}
 
 		void operator delete(void* mem)
 		{
-			getDefaultMemoryPool()->deallocate(mem);
+			free(mem); //getDefaultMemoryPool()->deallocate(mem);
 		}
 
 		MemoryPool& getPool() const
 		{
 			return *getDefaultMemoryPool();
 		}
-	};
 
+     protected:
+       GlobalStorage()
+#ifdef DEV_BUILD
+        :m_GlobalStorage__debug__WAS_DELETED(0)
+#endif
+       {
+       }
+
+      ~GlobalStorage()
+       {
+#ifdef DEV_BUILD
+        const auto x=::InterlockedIncrement(&m_GlobalStorage__debug__WAS_DELETED);
+
+        fb_assert(x==1);
+#endif
+       }//~GlobalStorage
+
+     private:
+#ifdef DEV_BUILD
+      long m_GlobalStorage__debug__WAS_DELETED;
+#endif
+	};//class GlobalStorage
 
 	// Permanent storage is used as base class for all objects,
 	// performing memory allocation in methods other than

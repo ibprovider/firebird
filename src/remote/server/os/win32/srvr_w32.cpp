@@ -279,13 +279,13 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 
 	if (connection_handle != INVALID_HANDLE_VALUE)
 	{
-		rem_port* port = 0;
+		RemPortPtr port(0);
 
 		try
 		{
 			if (server_flag & SRVR_inet)
 			{
-				port = INET_reconnect((SOCKET) connection_handle);
+				port = INET_reconnect2((SOCKET) connection_handle);
 
 				if (port)
 				{
@@ -294,9 +294,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 				}
 			}
 			else if (server_flag & SRVR_wnet)
-				port = WNET_reconnect(connection_handle);
+				port = WNET_reconnect2(connection_handle);
 			else if (server_flag & SRVR_xnet)
-				port = XNET_reconnect((ULONG_PTR) connection_handle);
+				port = XNET_reconnect2((ULONG_PTR) connection_handle);
 
 			if (port)
 				service_connection(port);
@@ -393,10 +393,10 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 
 	while (!server_shutdown)
 	{
-		rem_port* port = NULL;
+		RemPortPtr port(NULL);
 		try
 		{
-			port = INET_connect(protocol_inet, NULL, server_flag, 0, NULL);
+			port = INET_connect2(protocol_inet, NULL, server_flag, 0, NULL);
 		}
 		catch (const Exception& ex)
 		{
@@ -441,11 +441,11 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 
 	while (!server_shutdown)
 	{
-		rem_port* port = NULL;
+		RemPortPtr port(NULL);
 
 		try
 		{
-			port = WNET_connect(protocol_wnet, NULL, server_flag, NULL);
+			port = WNET_connect2(protocol_wnet, NULL, server_flag, NULL);
 		}
 		catch (const Exception& ex)
 		{
@@ -492,11 +492,11 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 
 	while (!server_shutdown)
 	{
-		rem_port* port = NULL;
+		RemPortPtr port(NULL);
 
 		try
 		{
-			port = XNET_connect(NULL, server_flag, NULL);
+			port = XNET_connect2(NULL, server_flag, NULL);
 		}
 		catch (const Exception& ex)
 		{

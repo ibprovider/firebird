@@ -121,6 +121,8 @@ namespace os_utils
 
 struct rem_port;
 
+typedef Firebird::RefPtr<rem_port> RemPortPtr;
+
 typedef Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete> UCharArrayAutoPtr;
 
 typedef Firebird::RefPtr<Firebird::IAttachment> ServAttachment;
@@ -273,7 +275,7 @@ struct Rvnt : public Firebird::GlobalStorage, public TypedHandle<rem_type_rev>
 	Rdb*		rvnt_rdb;
 	Firebird::RefPtr<Firebird::IEventCallback> rvnt_callback;
 	ServEvents	rvnt_iface;
-	rem_port*	rvnt_port;	// used to id server from whence async came
+	RemPortPtr	rvnt_port2;	// used to id server from whence async came
 	SLONG		rvnt_id;	// used to store client-side id
 	USHORT		rvnt_length;
 	Rvnt**		rvnt_self;
@@ -282,7 +284,7 @@ struct Rvnt : public Firebird::GlobalStorage, public TypedHandle<rem_type_rev>
 public:
 	Rvnt() :
 		rvnt_next(NULL), rvnt_rdb(NULL), rvnt_callback(NULL), rvnt_iface(NULL),
-		rvnt_port(NULL), rvnt_id(0), rvnt_length(0), rvnt_self(NULL)
+		rvnt_port2(NULL), rvnt_id(0), rvnt_length(0), rvnt_self(NULL)
 	{ }
 
 	~Rvnt()
@@ -905,9 +907,7 @@ class RemotePortGuard;
 
 // Port itself
 
-typedef rem_port* (*t_port_connect)(rem_port*, PACKET*);
-
-typedef Firebird::RefPtr<rem_port> RemPortPtr;
+typedef RemPortPtr (*t_port_connect)(rem_port*, PACKET*);
 
 struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 {
@@ -925,11 +925,11 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	bool			(*port_accept)(rem_port*, const p_cnct*);
 	void			(*port_disconnect)(rem_port*);
 	void			(*port_force_close)(rem_port*);
-	rem_port*		(*port_receive_packet)(rem_port*, PACKET*);
+	RemPortPtr		(*port_receive_packet2)(rem_port*, PACKET*);
 	XDR_INT			(*port_send_packet)(rem_port*, PACKET*);
 	XDR_INT			(*port_send_partial)(rem_port*, PACKET*);
-	t_port_connect	port_connect;		// Establish secondary connection
-	rem_port*		(*port_request)(rem_port*, PACKET*);	// Request to establish secondary connection
+	t_port_connect	port_connect2;		// Establish secondary connection
+	RemPortPtr		(*port_request2)(rem_port*, PACKET*);	// Request to establish secondary connection
 	bool			(*port_select_multi)(rem_port*, UCHAR*, SSHORT, SSHORT*, RemPortPtr&);	// get packet from active port
 	void			(*port_abort_aux_connection)(rem_port*);	// stop waiting for secondary connection
 
@@ -944,11 +944,11 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 		DISCONNECTED	// port is disconnected
 	}				port_state;
 
-	rem_port*		port_clients;		// client ports
-	rem_port*		port_next;			// next client port
-	rem_port*		port_parent;		// parent port (for client ports)
-	rem_port*		port_async;			// asynchronous sibling port
-	rem_port*		port_async_receive;	// async packets receiver
+	RemPortPtr		port_clients2;		// client ports
+	RemPortPtr		port_next2;			// next client port
+	rem_port*		port_parent1;		// parent port (for client ports)
+	RemPortPtr		port_async2;		// asynchronous sibling port
+	RemPortPtr		port_async_receive2;// async packets receiver
 	struct srvr*	port_server;		// server of port
 	USHORT			port_server_flags;	// TRUE if server
 	USHORT			port_protocol;		// protocol version number
@@ -1019,16 +1019,22 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	UCharArrayAutoPtr	port_compressed;
 #endif
 
-public:
-	rem_port(rem_port_t t, size_t rpt) :
+private:
+    struct tag2{};
+
+	rem_port(rem_port_t t, size_t rpt,tag2 /*dummy*/) :
 		port_sync(FB_NEW_POOL(getPool()) Firebird::RefMutex()),
 		port_que_sync(FB_NEW_POOL(getPool()) Firebird::RefMutex()),
 		port_write_sync(FB_NEW_POOL(getPool()) Firebird::RefMutex()),
 		port_cancel_sync(FB_NEW_POOL(getPool()) Firebird::RefMutex()),
-		port_accept(0), port_disconnect(0), port_force_close(0), port_receive_packet(0), port_send_packet(0),
-		port_send_partial(0), port_connect(0), port_request(0), port_select_multi(0),
-		port_type(t), port_state(PENDING), port_clients(0), port_next(0),
-		port_parent(0), port_async(0), port_async_receive(0),
+		port_accept(0), port_disconnect(0), port_force_close(0), port_receive_packet2(0), port_send_packet(0),
+		port_send_partial(0), port_connect2(0), port_request2(0), port_select_multi(0),
+		port_type(t), port_state(PENDING),
+        port_clients2(nullptr),
+        port_next2(nullptr),
+		port_parent1(nullptr),
+        port_async2(nullptr),
+        port_async_receive2(nullptr),
 		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(rpt / 2),
 		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0),
 		port_dummy_timeout(0), port_handle(INVALID_SOCKET), port_channel(INVALID_SOCKET), port_context(0),
@@ -1052,8 +1058,9 @@ public:
 		port_client_crypt_callback(NULL), port_server_crypt_callback(NULL),
 		port_buffer(FB_NEW_POOL(getPool()) UCHAR[rpt]),
 		port_snd_packets(0), port_rcv_packets(0), port_snd_bytes(0), port_rcv_bytes(0)
+       ,m_debug__DCR_STEP(0)
 	{
-		addRef();
+		//addRef();
 		memset(&port_linger, 0, sizeof port_linger);
 		memset(port_buffer, 0, rpt);
 #ifdef DEV_BUILD
@@ -1061,8 +1068,13 @@ public:
 #endif
 	}
 
-private:
 	~rem_port();	// this is refCounted object - private dtor is OK
+
+public:
+   static RemPortPtr createRemPortInstance(rem_port_t t, size_t rpt)
+   {
+    return RemPortPtr(FB_NEW rem_port(t,rpt,tag2()));
+   }
 
 public:
 	void initCompression();
@@ -1148,14 +1160,32 @@ public:
 	bool	accept(p_cnct* cnct);
 	void	disconnect();
 	void	force_close();
-	rem_port*	receive(PACKET* pckt);
+	RemPortPtr	receive2(PACKET* pckt);
 	XDR_INT	send(PACKET* pckt);
 	XDR_INT	send_partial(PACKET* pckt);
-	rem_port*	connect(PACKET* pckt);
-	rem_port*	request(PACKET* pckt);
+	RemPortPtr	connect2(PACKET* pckt);
+	RemPortPtr	request2(PACKET* pckt);
 	bool		select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port);
 	void		abort_aux_connection();
 
+private:
+    friend RemPortPtr;
+
+    virtual int addRef()const override final
+    {
+     const auto x=Firebird::RefCounted::addRef();
+
+     return x;
+    }//addRef
+
+    virtual int release()const override final
+    {
+     auto const x=Firebird::RefCounted::release();
+
+     return x;
+    }//release
+
+public:
 	bool haveRecvData()
 	{
 		Firebird::RefMutexGuard queGuard(*port_que_sync, FB_FUNCTION);
@@ -1253,6 +1283,11 @@ public:
 
 private:
 	bool tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptKey);
+
+private:
+#ifdef DEV_BUILD
+    long m_debug__DCR_STEP;
+#endif
 };
 
 
@@ -1274,21 +1309,21 @@ private:
 			{
 				Thread::waitForCompletion(waitHandle);
 				fb_assert(asyncPort);
-				if (asyncPort)
-					asyncPort->release();
+				//if (asyncPort)
+				//	asyncPort->release();
 			}
 			else if (asyncPort)
 				asyncPort->port_thread_guard = NULL;
 		}
 
-		rem_port* asyncPort;
+		RemPortPtr asyncPort;
 		Thread::Handle waitHandle;
 		bool waitFlag;
 	};
 
 public:
 	RemotePortGuard(rem_port* port, const char* f)
-		: wThr(port->port_async),
+		: wThr(port->port_async2),
 		  guard(*port->port_sync, f)
 	{
 		if (wThr.asyncPort)

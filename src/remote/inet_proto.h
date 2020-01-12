@@ -33,13 +33,13 @@ namespace Firebird
 	class ClumpletReader;
 }
 
-rem_port*	INET_analyze(ClntAuthBlock*, const Firebird::PathName&, const TEXT*,
+RemPortPtr	INET_analyze2(ClntAuthBlock*, const Firebird::PathName&, const TEXT*,
 						 bool, Firebird::ClumpletReader&, Firebird::RefPtr<const Config>*,
 						 const Firebird::PathName*, Firebird::ICryptKeyCallback*, int af = AF_UNSPEC);
-rem_port*	INET_connect(const TEXT*, struct packet*, USHORT, Firebird::ClumpletReader*,
+RemPortPtr	INET_connect2(const TEXT*, struct packet*, USHORT, Firebird::ClumpletReader*,
 						 Firebird::RefPtr<const Config>*, int af = AF_UNSPEC);
-rem_port*	INET_reconnect(SOCKET);
-rem_port*	INET_server(SOCKET);
+RemPortPtr	INET_reconnect2(SOCKET);
+RemPortPtr	INET_server2(SOCKET);
 void		setStopMainThread(FPTR_INT func);
 
 #endif // REMOTE_INET_PROTO_H

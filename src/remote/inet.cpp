@@ -411,10 +411,10 @@ static bool		accept_connection(rem_port*, const P_CNCT*);
 #ifdef HAVE_SETITIMER
 static void		alarm_handler(int);
 #endif
-static rem_port*		alloc_port(rem_port*, const USHORT = 0);
-static rem_port*		aux_connect(rem_port*, PACKET*);
+static RemPortPtr		alloc_port2(rem_port*, const USHORT = 0);
+static RemPortPtr		aux_connect2(rem_port*, PACKET*);
 static void				abort_aux_connection(rem_port*);
-static rem_port*		aux_request(rem_port*, PACKET*);
+static RemPortPtr		aux_request2(rem_port*, PACKET*);
 
 #if !defined(WIN_NT)
 static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM);
@@ -452,7 +452,7 @@ static bool_t	inet_getbytes(XDR*, SCHAR *, u_int);
 static void		inet_error(bool, rem_port*, const TEXT*, ISC_STATUS, int);
 static bool_t	inet_putbytes(XDR*, const SCHAR*, u_int);
 static bool		inet_read(XDR*);
-static rem_port*		inet_try_connect(	PACKET*,
+static RemPortPtr		inet_try_connect2(	PACKET*,
 									Rdb*,
 									const PathName&,
 									const TEXT*,
@@ -461,7 +461,7 @@ static rem_port*		inet_try_connect(	PACKET*,
 									const PathName*,
 									int);
 static bool		inet_write(XDR*);
-static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pai);
+static RemPortPtr listener_socket2(rem_port* port, USHORT flag, const addrinfo* pai);
 
 #ifdef DEBUG
 static void packet_print(const TEXT*, const UCHAR*, int, ULONG);
@@ -470,8 +470,8 @@ static void packet_print(const TEXT*, const UCHAR*, int, ULONG);
 static bool		packet_receive(rem_port*, UCHAR*, SSHORT, SSHORT*);
 static bool		packet_receive2(rem_port*, UCHAR*, SSHORT, SSHORT*);
 static bool		packet_send(rem_port*, const SCHAR*, SSHORT);
-static rem_port*		receive(rem_port*, PACKET *);
-static rem_port*		select_accept(rem_port*);
+static RemPortPtr		receive2(rem_port*, PACKET *);
+static RemPortPtr		select_accept2(rem_port*);
 
 static void		select_port(rem_port*, Select*, RemPortPtr&);
 static bool		select_multi(rem_port*, UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr&);
@@ -525,7 +525,7 @@ static GlobalPtr<Mutex> init_mutex;
 static volatile bool INET_initialized = false;
 static volatile bool INET_shutting_down = false;
 static Firebird::GlobalPtr<Select> INET_select;
-static rem_port* inet_async_receive = NULL;
+static RemPortPtr inet_async_receive2(NULL);
 
 
 static GlobalPtr<Mutex> port_mutex;
@@ -533,7 +533,7 @@ static GlobalPtr<PortsCleanup>	inet_ports;
 static GlobalPtr<SocketsArray> ports_to_close;
 
 
-rem_port* INET_analyze(ClntAuthBlock* cBlock,
+RemPortPtr INET_analyze2(ClntAuthBlock* cBlock,
 					   const PathName& file_name,
 					   const TEXT* node_name,
 					   bool uv_flag,
@@ -635,7 +635,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 		}
 	}
 
-	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, dpb, config, ref_db_name, af);
+	RemPortPtr port = inet_try_connect2(packet, rdb, file_name, node_name, dpb, config, ref_db_name, af);
 	P_ACPT* accept;
 
 	for(;;)
@@ -693,7 +693,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 				packet->p_operation = op_crypt_key_callback;
 				cc->p_cc_reply = 0;
 				port->send(packet);
-				port->receive(packet);
+				port->receive2(packet);
 				continue;
 			}
 			catch (const Exception&)
@@ -763,12 +763,12 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 	return port;
 }
 
-rem_port* INET_connect(const TEXT* name,
-					   PACKET* packet,
-					   USHORT flag,
-					   ClumpletReader* dpb,
-					   RefPtr<const Config>* config,
-					   int af)
+RemPortPtr INET_connect2(const TEXT* name,
+					     PACKET* packet,
+					     USHORT flag,
+					     ClumpletReader* dpb,
+					     RefPtr<const Config>* config,
+					     int af)
 {
 /**************************************
  *
@@ -798,7 +798,7 @@ rem_port* INET_connect(const TEXT* name,
 	}
 #endif
 
-	rem_port* port = alloc_port(NULL);
+	RemPortPtr port = alloc_port2(NULL);
 	if (config)
 	{
 		port->port_config = *config;
@@ -968,7 +968,7 @@ rem_port* INET_connect(const TEXT* name,
 		else
 		{
 			// server
-			return listener_socket(port, flag, pai);
+			return listener_socket2(port, flag, pai);
 		}
 
 		SOCLOSE(port->port_handle);
@@ -983,7 +983,7 @@ rem_port* INET_connect(const TEXT* name,
 	return port;
 }
 
-static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pai)
+static RemPortPtr listener_socket2(rem_port* const port, USHORT flag, const addrinfo* pai)
 {
 /**************************************
  *
@@ -1089,7 +1089,7 @@ static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pa
 		port->port_dummy_packet_interval = 0;
 		port->port_dummy_timeout = 0;
 		port->port_server_flags |= (SRVR_server | SRVR_multi_client);
-		return port;
+		return RemPortPtr(port);
 	}
 
 	while (true)
@@ -1099,7 +1099,7 @@ static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pa
 		if (s == INVALID_SOCKET)
 		{
 			if (INET_shutting_down)
-				return NULL;
+				return RemPortPtr(NULL);
 			inet_error(true, port, "accept", isc_net_connect_err, inetErrNo);
 		}
 #ifdef WIN_NT
@@ -1112,7 +1112,7 @@ static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pa
 			port->port_handle = s;
 			port->port_server_flags |= SRVR_server;
 			port->port_flags |= PORT_server;
-			return port;
+			return RemPortPtr(port);
 		}
 
 #ifdef WIN_NT
@@ -1148,11 +1148,11 @@ static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pa
 		forkSockets = NULL;
 	}
 #endif
-	return NULL;
+	return RemPortPtr(NULL);
 }
 
 
-rem_port* INET_reconnect(SOCKET handle)
+RemPortPtr INET_reconnect2(SOCKET handle)
 {
 /**************************************
  *
@@ -1166,7 +1166,7 @@ rem_port* INET_reconnect(SOCKET handle)
  *	a port block.
  *
  **************************************/
-	rem_port* const port = alloc_port(NULL);
+	RemPortPtr port = alloc_port2(NULL);
 
 	port->port_handle = handle;
 	port->port_flags |= PORT_server;
@@ -1185,7 +1185,7 @@ rem_port* INET_reconnect(SOCKET handle)
 	return port;
 }
 
-rem_port* INET_server(SOCKET sock)
+RemPortPtr INET_server2(SOCKET sock)
 {
 /**************************************
  *
@@ -1199,7 +1199,7 @@ rem_port* INET_server(SOCKET sock)
  *
  **************************************/
 	int n = 0;
-	rem_port* const port = alloc_port(NULL);
+	RemPortPtr port = alloc_port2(NULL);
 	port->port_flags |= PORT_server;
 	port->port_server_flags |= SRVR_server;
 	port->port_handle = sock;
@@ -1291,7 +1291,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 }
 
 
-static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
+static RemPortPtr alloc_port2(rem_port* const parent, const USHORT flags)
 {
 /**************************************
  *
@@ -1334,12 +1334,12 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 			INET_initialized = true;
 
 			// This should go AFTER 'INET_initialized = true' to avoid recursion
-			inet_async_receive = alloc_port(0);
-			inet_async_receive->port_flags |= PORT_server;
+			inet_async_receive2 = alloc_port2(0);
+			inet_async_receive2->port_flags |= PORT_server;
 		}
 	}
 
-	rem_port* const port = FB_NEW rem_port(rem_port::INET, INET_remote_buffer * 2);
+	RemPortPtr port = rem_port::createRemPortInstance(rem_port::INET, INET_remote_buffer * 2);
 	REMOTE_get_timeout_params(port, 0);
 
 	TEXT buffer[BUFFER_SMALL];
@@ -1353,15 +1353,15 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 	port->port_accept = accept_connection;
 	port->port_disconnect = disconnect;
 	port->port_force_close = force_close;
-	port->port_receive_packet = receive;
+	port->port_receive_packet2 = receive2;
 	port->port_select_multi = select_multi;
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
-	port->port_connect = aux_connect;
+	port->port_connect2 = aux_connect2;
 	port->port_abort_aux_connection = abort_aux_connection;
-	port->port_request = aux_request;
+	port->port_request2 = aux_request2;
 	port->port_buff_size = (USHORT) INET_remote_buffer;
-	port->port_async_receive = inet_async_receive;
+	port->port_async_receive2 = inet_async_receive2;
 	port->port_flags |= flags;
 
 	xdrinet_create(&port->port_send, port,
@@ -1389,7 +1389,7 @@ static void abort_aux_connection(rem_port* port)
 	}
 }
 
-static rem_port* aux_connect(rem_port* port, PACKET* packet)
+static RemPortPtr aux_connect2(rem_port* port, PACKET* packet)
 {
 /**************************************
  *
@@ -1440,7 +1440,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		}
 
 		if (port->port_channel == INVALID_SOCKET)
-			return NULL;
+			return RemPortPtr(NULL);
 
 		const SOCKET n = os_utils::accept(port->port_channel, NULL, NULL);
 		inetErrNo = INET_ERRNO;
@@ -1458,12 +1458,12 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 
 		get_peer_info(port);
 
-		return port;
+		return RemPortPtr(port);
 	}
 
-	rem_port* const new_port = alloc_port(port->port_parent,
+	RemPortPtr new_port = alloc_port2(port->port_parent1,
 		(port->port_flags & PORT_no_oob) | PORT_async);
-	port->port_async = new_port;
+	port->port_async2 = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
 	P_RESP* response = &packet->p_resp;
@@ -1520,7 +1520,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	return new_port;
 }
 
-static rem_port* aux_request( rem_port* port, PACKET* packet)
+static RemPortPtr aux_request2( rem_port* port, PACKET* packet)
 {
 /**************************************
  *
@@ -1583,9 +1583,9 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 		inet_error(false, port, "listen", isc_net_event_listen_err, INET_ERRNO);
 	}
 
-	rem_port* const new_port = alloc_port(port->port_parent,
+	RemPortPtr new_port = alloc_port2(port->port_parent1,
 		(port->port_flags & PORT_no_oob) | PORT_async | PORT_connecting);
-	port->port_async = new_port;
+	port->port_async2 = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
 
@@ -1658,7 +1658,7 @@ static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM)
 }
 #endif // !defined(WIN_NT)
 
-static void disconnect(rem_port* const port)
+static void disconnect(rem_port* port)
 {
 /**************************************
  *
@@ -1698,17 +1698,17 @@ static void disconnect(rem_port* const port)
 	port->port_state = rem_port::DISCONNECTED;
 	port->port_flags &= ~PORT_connecting;
 
-	if (port->port_async)
+	if (port->port_async2)
 	{
-		disconnect(port->port_async);
-		port->port_async = NULL;
+		disconnect(port->port_async2);
+		port->port_async2 = NULL;
 	}
 	port->port_context = NULL;
 
 	// hvlad: delay closing of the server sockets to prevent its reuse
 	// by another (newly accepted) port until next select() call. See
 	// also select_wait() function.
-	const bool delayClose = (port->port_server_flags && port->port_parent);
+	const bool delayClose = (port->port_server_flags && port->port_parent1);
 
 	// If this is a sub-port, unlink it from its parent
 	port->unlinkParent();
@@ -1730,9 +1730,19 @@ static void disconnect(rem_port* const port)
 	}
 
 	if (port->port_thread_guard && port->port_events_thread && !Thread::isCurrent(port->port_events_threadId))
-		port->port_thread_guard->setWait(port->port_events_thread);
+	{
+    	port->port_thread_guard->setWait(port->port_events_thread);
+    }
 	else
-		port->release();
+    {
+        // [2020-01-12] It is BUG.
+        //  Lifetime of port is controled by external code.
+		//
+        // port->release();
+        //
+
+        port=NULL;
+    }//else
 
 #ifdef DEBUG
 	if (INET_trace & TRACE_summary)
@@ -1762,8 +1772,8 @@ static void force_close(rem_port* port)
  *
  **************************************/
 
-	if (port->port_async)
-		abort_aux_connection(port->port_async);
+	if (port->port_async2)
+		abort_aux_connection(port->port_async2);
 
 	if (port->port_state != rem_port::PENDING)
 		return;
@@ -1936,7 +1946,7 @@ bool inet_aton(const char* name, in_addr* address)
 #endif
 
 
-static rem_port* receive( rem_port* main_port, PACKET * packet)
+static RemPortPtr receive2( rem_port* main_port, PACKET * packet)
 {
 /**************************************
  *
@@ -1986,7 +1996,7 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 #endif
 	} while (packet->p_operation == op_dummy);
 
-	return main_port;
+	return RemPortPtr(main_port);
 }
 
 static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSHORT* length,
@@ -2021,7 +2031,7 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 					SOCLOSE(main_port->port_handle);
 				}
 			}
-			else if (port = select_accept(main_port))
+			else if (port = select_accept2(main_port))
 			{
 				if (!REMOTE_inflate(port, packet_receive, buffer, bufsize, length))
 				{
@@ -2061,7 +2071,7 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 	}
 }
 
-static rem_port* select_accept( rem_port* main_port)
+static RemPortPtr select_accept2( rem_port* main_port)
 {
 /**************************************
  *
@@ -2074,7 +2084,7 @@ static rem_port* select_accept( rem_port* main_port)
  *
  **************************************/
 
-	rem_port* const port = alloc_port(main_port);
+	RemPortPtr port = alloc_port2(main_port);
 	inet_ports->registerPort(port);
 
 	port->port_handle = os_utils::accept(main_port->port_handle, NULL, NULL);
@@ -2091,10 +2101,10 @@ static rem_port* select_accept( rem_port* main_port)
 	if (main_port->port_server_flags & SRVR_thread_per_port)
 	{
 		port->port_server_flags = (SRVR_server | SRVR_inet | SRVR_thread_per_port);
-		return port;
+		return RemPortPtr(port);
 	}
 
-	return 0;
+	return RemPortPtr(0);
 }
 
 static void select_port(rem_port* main_port, Select* selct, RemPortPtr& port)
@@ -2117,7 +2127,7 @@ static void select_port(rem_port* main_port, Select* selct, RemPortPtr& port)
 
 	MutexLockGuard guard(port_mutex, FB_FUNCTION);
 
-	for (port = main_port; port; port = port->port_next)
+	for (port = main_port; port; port = port->port_next2)
 	{
 		Select::HandleState result = selct->ok(port);
 		selct->unset(port->port_handle);
@@ -2193,7 +2203,7 @@ static bool select_wait( rem_port* main_port, Select* selct)
 				SOCLOSE(s);
 			}
 
-			for (rem_port* port = main_port; port; port = port->port_next)
+			for (RemPortPtr port(main_port); port; port = port->port_next2)
 			{
 				if (port->port_state == rem_port::PENDING &&
 					// don't wait on still listening (not connected) async port
@@ -2292,7 +2302,7 @@ static bool select_wait( rem_port* main_port, Select* selct)
 				if (selct->getCount() == 0)
 				{
 					MutexLockGuard guard(port_mutex, FB_FUNCTION);
-					for (rem_port* port = main_port; port; port = port->port_next)
+					for (RemPortPtr port(main_port); port; port = port->port_next2)
 					{
 						selct->unset(port->port_handle);
 					}
@@ -2746,7 +2756,7 @@ static bool packet_receive2(rem_port* port, UCHAR* p, SSHORT bufSize, SSHORT* le
 	return true;
 }
 
-static rem_port* inet_try_connect(PACKET* packet,
+static RemPortPtr inet_try_connect2(PACKET* packet,
 								  Rdb* rdb,
 								  const PathName& file_name,
 								  const TEXT* node_name,
@@ -2782,10 +2792,10 @@ static rem_port* inet_try_connect(PACKET* packet,
 	// If we can't talk to a server, punt.  Let somebody else generate
 	// an error.  status_vector will have the network error info.
 
-	rem_port* port = NULL;
+	RemPortPtr port(NULL);
 	try
 	{
-		port = INET_connect(node_name, packet, false, &dpb, config, af);
+		port = INET_connect2(node_name, packet, false, &dpb, config, af);
 	}
 	catch (const Exception&)
 	{
@@ -2797,7 +2807,7 @@ static rem_port* inet_try_connect(PACKET* packet,
 
 	rdb->rdb_port = port;
 	port->port_context = rdb;
-	if (!port->receive(packet))
+	if (!port->receive2(packet))
 	{
 		rdb->rdb_port = NULL;
 		delete rdb;

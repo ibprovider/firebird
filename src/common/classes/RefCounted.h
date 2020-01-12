@@ -35,28 +35,51 @@ namespace Firebird
 	public:
 		virtual int addRef() const
 		{
+			fb_assert(m_debug__WAS_DELETED == 0);
+
 			return ++m_refCnt;
 		}
 
 		virtual int release() const
 		{
 			fb_assert(m_refCnt.value() > 0);
+			fb_assert(m_debug__WAS_DELETED == 0);
+
 			const int refCnt = --m_refCnt;
 			if (!refCnt)
-				delete this;
+			{
+                fb_assert(::InterlockedIncrement(&m_debug__WAS_DELETED)==1);
+
+            	delete this;
+            }//if
+
 			return refCnt;
 		}
 
 	protected:
-		RefCounted() : m_refCnt(0) {}
+		RefCounted()
+		 : m_refCnt(0)
+#ifdef DEV_BUILD
+		 , m_debug__WAS_DELETED(0)
+#endif
+		{
+		}
 
 		virtual ~RefCounted()
 		{
 			fb_assert(m_refCnt.value() == 0);
+
+#ifdef DEV_BUILD
+            ::InterlockedIncrement(&m_debug__WAS_DELETED);
+#endif
 		}
 
 	private:
 		mutable AtomicCounter m_refCnt;
+
+#ifdef DEV_BUILD
+		mutable long m_debug__WAS_DELETED;
+#endif
 	};
 
 	// reference counted object guard
@@ -91,10 +114,18 @@ namespace Firebird
 	class RefPtr
 	{
 	public:
-		RefPtr() : ptr(NULL)
+		RefPtr()
+         : ptr(NULL)
+#ifdef DEV_BUILD
+         , m_debug__WAS_DELETED(0)
+#endif
 		{ }
 
-		explicit RefPtr(T* p) : ptr(p)
+		explicit RefPtr(T* p)
+         : ptr(p)
+#ifdef DEV_BUILD
+         , m_debug__WAS_DELETED(0)
+#endif
 		{
 			if (ptr)
 			{
@@ -104,10 +135,18 @@ namespace Firebird
 
 		// This special form of ctor is used to create refcounted ptr from interface,
 		// returned by a function (which increments counter on return)
-		RefPtr(NoIncrement x, T* p) : ptr(p)
+		RefPtr(NoIncrement x, T* p)
+         : ptr(p)
+#ifdef DEV_BUILD
+         , m_debug__WAS_DELETED(0)
+#endif
 		{ }
 
-		RefPtr(const RefPtr& r) : ptr(r.ptr)
+		RefPtr(const RefPtr& r)
+         : ptr(r.ptr)
+#ifdef DEV_BUILD
+         , m_debug__WAS_DELETED(0)
+#endif
 		{
 			if (ptr)
 			{
@@ -117,6 +156,13 @@ namespace Firebird
 
 		~RefPtr()
 		{
+#ifdef DEV_BUILD
+            const auto x=::InterlockedIncrement(&m_debug__WAS_DELETED);
+
+            fb_assert(x==1);
+            fb_assert(m_debug__WAS_DELETED==1);
+#endif
+
 			if (ptr)
 			{
 				ptr->release();
@@ -194,28 +240,47 @@ namespace Firebird
 		}
 
 	private:
+        template<class T>
+        struct no_const
+        {
+         typedef T result;
+        };
+
+        template<class T>
+        struct no_const<const T>
+        {
+         typedef T result;
+        };
+
+
 		T* assign(T* const p)
 		{
-			if (ptr != p)
+			if (ptr == p)
+			    return ptr;
+
+            typedef  typename no_const<T>::result TT;
+
+			if (p)
 			{
-				if (p)
-				{
-					p->addRef();
-				}
-
-				T* tmp = ptr;
-				ptr = p;
-
-				if (tmp)
-				{
-					tmp->release();
-				}
+				p->addRef();
 			}
 
-			return ptr;
+			T* tmp = (T*)::InterlockedExchangePointer(reinterpret_cast<void**>(const_cast<TT**>(&ptr)),
+                                                      const_cast<TT*>(p));
+
+			if (tmp)
+			{
+				tmp->release();
+			}
+
+			return p;
 		}
 
 		T* ptr;
+
+#ifdef DEV_BUILD
+		long m_debug__WAS_DELETED;
+#endif
 	};
 
 	template <typename T>
