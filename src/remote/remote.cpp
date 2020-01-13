@@ -1369,7 +1369,14 @@ namespace {
 
 	void* allocFunc(void*, uInt items, uInt size)
 	{
-		return MemoryPool::globalAlloc(items * size ALLOC_ARGS);
+		try
+		{
+			return MemoryPool::globalAlloc(items * size ALLOC_ARGS);
+		}
+		catch (const Firebird::Exception&)
+		{
+			return NULL;
+		}
 	}
 
 	void freeFunc(void*, void* address)

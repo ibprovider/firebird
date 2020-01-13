@@ -710,7 +710,7 @@ jrd_file* PIO_open(thread_db* tdbb,
 	}
 
 	const bool shareMode = dbb->dbb_config->getServerMode() != MODE_SUPER;
-	lockDatabaseFile(desc, shareMode || readOnly, false, file_name.c_str(), isc_io_open_err);
+	lockDatabaseFile(desc, shareMode, false, file_name.c_str(), isc_io_open_err);
 
 	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
 

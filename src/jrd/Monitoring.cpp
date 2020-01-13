@@ -134,13 +134,20 @@ MonitoringData::MonitoringData(const Database* dbb)
 
 MonitoringData::~MonitoringData()
 {
-	Guard guard(this);
+	m_sharedMemory->mutexLock();
 
-	if (m_sharedMemory->getHeader() &&
-		m_sharedMemory->getHeader()->used == alignOffset(sizeof(Header)))
+	try
 	{
-		m_sharedMemory->removeMapFile();
+		if (m_sharedMemory->getHeader() &&
+			m_sharedMemory->getHeader()->used == alignOffset(sizeof(Header)))
+		{
+			m_sharedMemory->removeMapFile();
+		}
 	}
+	catch (const Exception&)
+	{} // no-op
+
+	m_sharedMemory->mutexUnlock();
 }
 
 

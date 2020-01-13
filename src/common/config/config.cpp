@@ -189,7 +189,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"UserManager",				(ConfigValue) "Srp"},
 	{TYPE_STRING,		"TracePlugin",				(ConfigValue) "fbtrace"},
 	{TYPE_STRING,		"SecurityDatabase",			(ConfigValue) "security.db"},	// sec/db alias - rely on databases.conf
-	{TYPE_STRING,		"ServerMode",				(ConfigValue) "Super"},
+	{TYPE_STRING,		"ServerMode",				(ConfigValue) ""},		// actual value differs in boot/regular cases
 	{TYPE_STRING,		"WireCrypt",				(ConfigValue) NULL},
 	{TYPE_STRING,		"WireCryptPlugin",			(ConfigValue) "Arc4"},
 	{TYPE_STRING,		"KeyHolderPlugin",			(ConfigValue) ""},
@@ -707,7 +707,7 @@ int Config::getServerMode()
 	}
 
 	// use default
-	rc = MODE_SUPER;
+	rc = fb_utils::bootBuild() ? MODE_CLASSIC : MODE_SUPER;
 	return rc;
 }
 

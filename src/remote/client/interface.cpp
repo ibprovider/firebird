@@ -6344,6 +6344,7 @@ static void authReceiveResponse(bool havePacket, ClntAuthBlock& cBlock, rem_port
 			break;
 		}
 
+		cBlock.resetDataFromPlugin();
 		cBlock.storeDataForPlugin(d->cstr_length, d->cstr_address);
 		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: receiveResponse: authenticate(%s)\n", cBlock.plugins.name()));
 		if (cBlock.plugins.plugin()->authenticate(&s, &cBlock) == IAuth::AUTH_FAILED)

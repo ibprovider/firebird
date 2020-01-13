@@ -536,6 +536,7 @@ static rem_port* alloc_port( rem_port* parent)
 	if (parent)
 	{
 		delete port->port_connection;
+		port->port_connection = NULL;
 		port->port_connection = REMOTE_make_string(parent->port_connection->str_data);
 
 		port->linkParent(parent);

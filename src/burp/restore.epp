@@ -135,6 +135,7 @@ bool	get_relation(BurpGlobals* tdgbl);
 bool	get_relation_data(BurpGlobals* tdgbl);
 bool	get_sql_roles(BurpGlobals* tdgbl);
 bool	get_mapping(BurpGlobals* tdgbl);
+bool	get_db_creator(BurpGlobals* tdgbl);
 bool	get_security_class(BurpGlobals* tdgbl);
 void	get_source_blob(BurpGlobals* tdgbl, ISC_QUAD&, bool);
 USHORT	get_text(BurpGlobals* tdgbl, TEXT*, ULONG);
@@ -8088,6 +8089,70 @@ bool get_mapping(BurpGlobals* tdgbl)
 	return true;
 }
 
+bool get_db_creator(BurpGlobals* tdgbl)
+{
+/**************************************
+ *
+ *	g e t _ d b _ c r e a t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Restore database creators
+ *
+ **************************************/
+	att_type		attribute;
+	scan_attr_t		scan_next_attr;
+	TEXT			temp[GDS_NAME_LEN];
+	SSHORT			l;
+	Firebird::string role;
+
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_db_creators_req_handle1)
+			C IN RDB$DB_CREATORS
+
+			C.RDB$USER.NULL = TRUE;
+			C.RDB$USER_TYPE.NULL = TRUE;
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+				case att_dbc_user:
+					C.RDB$USER.NULL = FALSE;
+					GET_TEXT(C.RDB$USER);
+					if (tdgbl->firstDbc)
+					{
+						tdgbl->firstDbc = false;
+						BURP_verbose(394);
+						// msg 394 restoring database creators
+					}
+					BURP_verbose (393, C.RDB$USER);
+					break;
+
+				case att_dbc_type:
+					C.RDB$USER_TYPE.NULL = FALSE;
+					C.RDB$USER_TYPE = (USHORT) get_int32(tdgbl);
+					break;
+
+				default:
+					// msg 395 database creator
+					bad_attribute(scan_next_attr, attribute, 395);
+					break;
+				}
+			}
+
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+
+	return true;
+}
+
 bool is_ascii_name (const TEXT *name, const SSHORT len)
 {
 /**************************************
@@ -10066,6 +10131,12 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 
 		case rec_mapping:
 			if (!get_mapping(tdgbl))
+				return false;
+			flag = true;
+			break;
+
+		case rec_db_creator:
+			if (!get_db_creator(tdgbl))
 				return false;
 			flag = true;
 			break;
