@@ -219,7 +219,7 @@ namespace Firebird
 				}
 			}
 
-			return ptr;
+			return p;
 		}
 
 	private:
